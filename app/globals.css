@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #8B5E3C;
+  --secondary: #D9B382;
+  --accent: #F5F1EB;
+  --dark: #1E1E1E;
+  --cream: #FAF7F2;
+  --terracotta: #C4714A;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #FFFFFF;
+  color: #1E1E1E;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { font-family: 'Playfair Display', serif; }
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 inline-flex items-center gap-2;
+  }
+  .btn-secondary {
+    @apply bg-secondary-400 hover:bg-secondary-500 text-dark px-6 py-3 rounded-lg font-medium transition-all duration-200 inline-flex items-center gap-2;
+  }
+  .btn-outline {
+    @apply border-2 border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 inline-flex items-center gap-2;
+  }
+  .section-title {
+    @apply font-serif text-3xl md:text-4xl font-bold text-dark;
+  }
+  .section-subtitle {
+    @apply text-gray-500 mt-3 text-base md:text-lg max-w-2xl mx-auto;
+  }
+  .card {
+    @apply bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden;
+  }
+  .input {
+    @apply w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all;
+  }
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+}
+
+/* Swiper custom dots */
+.swiper-pagination-bullet { background: #D9B382 !important; }
+.swiper-pagination-bullet-active { background: #8B5E3C !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #F5F1EB; }
+::-webkit-scrollbar-thumb { background: #D9B382; border-radius: 3px; }
