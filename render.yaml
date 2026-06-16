@@ -9,5 +9,8 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+        value: YOUR_CLOUDINARY_CLOUD_NAME
       - key: NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+        value: YOUR_UPLOAD_PRESET
       - key: NEXT_PUBLIC_BACKEND_URL
+        value: https://your-backend-url.onrender.com
