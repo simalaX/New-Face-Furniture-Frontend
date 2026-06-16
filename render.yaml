@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: new-face-furniture-frontend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+        sync: false
+      - key: NEXT_PUBLIC_BACKEND_URL
+        value: https://your-backend-url.onrender.com
+        sync: false
