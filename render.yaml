@@ -6,11 +6,17 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm run start
     envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
       - key: NODE_ENV
         value: production
-      - key: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-        value: YOUR_CLOUDINARY_CLOUD_NAME
-      - key: NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
-        value: YOUR_UPLOAD_PRESET
+      - key: NEXT_PUBLIC_API_URL
+        value: https://new-face-backend.onrender.com
       - key: NEXT_PUBLIC_BACKEND_URL
-        value: https://your-backend-url.onrender.com
+        value: https://new-face-backend.onrender.com
+      - key: NEXT_PUBLIC_WHATSAPP_NUMBER
+        value: 254115990547
+      - key: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+        value: dxsuoivw5
+      - key: NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+        value: furniture_uploads
