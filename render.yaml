@@ -3,13 +3,11 @@ services:
     name: new-face-furniture-frontend
     env: node
     plan: free
-    buildCommand: npm ci && npm run build
+    buildCommand: npm install && npm run build
     startCommand: npm run start
     envVars:
       - key: NODE_VERSION
         value: 20.11.0
-      - key: NODE_ENV
-        value: production
       - key: NEXT_PUBLIC_API_URL
         value: https://new-face-backend.onrender.com
       - key: NEXT_PUBLIC_BACKEND_URL
