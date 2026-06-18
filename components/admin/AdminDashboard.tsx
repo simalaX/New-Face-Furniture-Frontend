@@ -26,6 +26,15 @@ interface Category {
   slug: string;
 }
 
+// ─── Auth helper ──────────────────────────────────────────────────────────────
+function authHeaders(): HeadersInit {
+  const token = localStorage.getItem('admin_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
 // ─── Highlight helper ─────────────────────────────────────────────────────────
 const HIGHLIGHT_PATTERNS: RegExp[] = [
   /\b(\d+[-\s]?(seater|seat|door|drawer|piece|tier|shelf|shelves|person|pc|pcs)s?)\b/gi,
@@ -68,8 +77,7 @@ function ChangePasswordModal({ backendUrl, onClose }: { backendUrl: string; onCl
     try {
       const res = await fetch(`${backendUrl}/auth/change-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: authHeaders(),
         body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
       });
       if (!res.ok) {
@@ -99,23 +107,30 @@ function ChangePasswordModal({ backendUrl, onClose }: { backendUrl: string; onCl
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Current Password</label>
-            <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="Enter current password"
+            <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
+              placeholder="Enter current password"
               className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">New Password</label>
-            <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="At least 8 characters"
+            <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+              placeholder="At least 8 characters"
               className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Confirm New Password</label>
-            <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Repeat new password"
+            <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+              placeholder="Repeat new password"
               className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2"><p className="text-red-600 text-sm">{error}</p></div>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm">Cancel</button>
-            <button type="submit" disabled={loading} className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium text-sm disabled:opacity-50">
+            <button type="button" onClick={onClose}
+              className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm">
+              Cancel
+            </button>
+            <button type="submit" disabled={loading}
+              className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium text-sm disabled:opacity-50">
               {loading ? 'Saving...' : 'Update Password'}
             </button>
           </div>
@@ -163,8 +178,6 @@ function EditProductModal({
     setSaving(true);
     try {
       let imageUrl = item.secure_url;
-
-      // Upload new image if selected
       if (newImageFile) {
         const fd = new FormData();
         fd.append('file', newImageFile);
@@ -179,11 +192,9 @@ function EditProductModal({
 
       const res = await fetch(`${backendUrl}/api/v1/products/${item.id}/`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: authHeaders(),
         body: JSON.stringify({
-          name: title.trim(),
-          slug,
+          name: title.trim(), slug,
           description: description.trim() || null,
           price: price ? parseFloat(price) : 0,
           original_price: originalPrice ? parseFloat(originalPrice) : null,
@@ -236,23 +247,15 @@ function EditProductModal({
             </svg>
           </button>
         </div>
-
         <div className="p-6 space-y-4">
-          {/* Image */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Image</label>
             <div className="flex gap-4 items-start">
-              <img
-                src={newImagePreview || item.secure_url}
-                alt="product"
-                className="w-24 h-24 object-cover rounded-xl border border-gray-200"
-              />
+              <img src={newImagePreview || item.secure_url} alt="product"
+                className="w-24 h-24 object-cover rounded-xl border border-gray-200" />
               <div>
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  className="px-4 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-                >
+                <button type="button" onClick={() => fileRef.current?.click()}
+                  className="px-4 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors">
                   Change Image
                 </button>
                 {newImageFile && <p className="text-xs text-gray-400 mt-1">{newImageFile.name}</p>}
@@ -260,8 +263,6 @@ function EditProductModal({
               </div>
             </div>
           </div>
-
-          {/* Title + Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Title *</label>
@@ -276,8 +277,6 @@ function EditProductModal({
               </select>
             </div>
           </div>
-
-          {/* Price + Original Price */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Price (KES)</label>
@@ -291,8 +290,6 @@ function EditProductModal({
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
-
-          {/* Dimensions + Materials */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Dimensions</label>
@@ -307,8 +304,6 @@ function EditProductModal({
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
-
-          {/* Description */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Description</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3}
@@ -319,22 +314,24 @@ function EditProductModal({
               </p>
             )}
           </div>
-
-          {/* Featured + In Stock */}
           <div className="flex gap-6">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)} className="w-4 h-4 accent-primary-500" />
+              <input type="checkbox" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)}
+                className="w-4 h-4 accent-primary-500" />
               <span className="text-sm text-gray-600">Featured</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={inStock} onChange={e => setInStock(e.target.checked)} className="w-4 h-4 accent-primary-500" />
+              <input type="checkbox" checked={inStock} onChange={e => setInStock(e.target.checked)}
+                className="w-4 h-4 accent-primary-500" />
               <span className="text-sm text-gray-600">In Stock</span>
             </label>
           </div>
         </div>
-
         <div className="flex gap-3 p-6 border-t">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm">Cancel</button>
+          <button onClick={onClose}
+            className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm">
+            Cancel
+          </button>
           <button onClick={handleSave} disabled={saving}
             className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium text-sm disabled:opacity-50">
             {saving ? 'Saving...' : 'Save Changes'}
@@ -364,11 +361,8 @@ function ProductCard({
     <div className="bg-white rounded-2xl shadow overflow-hidden">
       {editing && (
         <EditProductModal
-          item={item}
-          categories={categories}
-          backendUrl={backendUrl}
-          cloudName={cloudName}
-          uploadPreset={uploadPreset}
+          item={item} categories={categories} backendUrl={backendUrl}
+          cloudName={cloudName} uploadPreset={uploadPreset}
           onClose={() => setEditing(false)}
           onSaved={updated => { onUpdated(updated); setEditing(false); }}
         />
@@ -392,12 +386,19 @@ function ProductCard({
         </div>
         <div className="flex gap-1 mb-3">
           {item.is_featured && <span className="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">Featured</span>}
-          {item.in_stock === false && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Out of Stock</span>}
-          {item.in_stock !== false && <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">In Stock</span>}
+          {item.in_stock === false
+            ? <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Out of Stock</span>
+            : <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">In Stock</span>}
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setEditing(true)} className="flex-1 px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">Edit</button>
-          <button onClick={onDelete} className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium">Delete</button>
+          <button onClick={() => setEditing(true)}
+            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+            Edit
+          </button>
+          <button onClick={onDelete}
+            className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium">
+            Delete
+          </button>
         </div>
       </div>
     </div>
@@ -420,7 +421,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
 
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '';
   const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || '';
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://new-face-backend-ba3q.onrender.com';
   const setupMissing = !cloudName || !uploadPreset;
 
   const defaultCategories: Category[] = [
@@ -437,7 +438,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const res = await fetch(`${backendUrl}/api/v1/categories/`, { credentials: 'include' });
+        const res = await fetch(`${backendUrl}/api/v1/categories/`);
         const cats: Category[] = await res.json();
         if (cats && cats.length) { setCategories(cats); setCategoryId(cats[0].id); }
         else { setCategories(defaultCategories); setCategoryId(defaultCategories[0].id); }
@@ -451,7 +452,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const res = await fetch(`${backendUrl}/api/v1/products/?limit=100`, { credentials: 'include' });
+        const res = await fetch(`${backendUrl}/api/v1/products/?limit=100`);
         if (!res.ok) return;
         const data = await res.json();
         if (Array.isArray(data)) {
@@ -510,8 +511,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
 
       const backendRes = await fetch(`${backendUrl}/api/v1/products/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: authHeaders(),
         body: JSON.stringify({
           name: title.trim(), slug,
           description: description.trim() || null,
@@ -563,7 +563,10 @@ export default function AdminDashboard({ admin }: { admin: string }) {
     if (!confirm('Delete this item permanently?')) return;
     try {
       const target = id ?? encodeURIComponent(public_id);
-      const res = await fetch(`${backendUrl}/api/v1/products/${target}`, { method: 'DELETE', credentials: 'include' });
+      const res = await fetch(`${backendUrl}/api/v1/products/${target}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
       if (!res.ok) toast.error('Backend delete failed');
       else toast.success('Item deleted');
     } catch { toast.error('Could not reach backend'); }
@@ -576,7 +579,6 @@ export default function AdminDashboard({ admin }: { admin: string }) {
         <ChangePasswordModal backendUrl={backendUrl} onClose={() => setShowPasswordModal(false)} />
       )}
 
-      {/* Header */}
       <div className="mb-8 flex items-center justify-between flex-wrap gap-3">
         <h2 className="font-serif text-2xl font-bold">Admin Dashboard</h2>
         <div className="flex items-center gap-4">
@@ -594,7 +596,6 @@ export default function AdminDashboard({ admin }: { admin: string }) {
         </div>
       </div>
 
-      {/* Upload Form */}
       <form onSubmit={handleUpload} className="bg-white p-6 rounded-2xl shadow mb-8 space-y-6">
         <h3 className="font-serif text-lg font-bold border-b pb-3">Upload New Product</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -617,7 +618,8 @@ export default function AdminDashboard({ admin }: { admin: string }) {
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
               Title <span className="text-red-500">*</span>
             </label>
-            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. 6-Seater Dining Set" required
+            <input value={title} onChange={e => setTitle(e.target.value)}
+              placeholder="e.g. 6-Seater Dining Set" required
               className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div className="flex flex-col gap-1">
@@ -665,7 +667,6 @@ export default function AdminDashboard({ admin }: { admin: string }) {
         </div>
       </form>
 
-      {/* Products Grid */}
       <div>
         <h3 className="font-serif text-lg font-bold mb-4">
           Uploaded Items <span className="text-gray-400 font-sans font-normal text-base">({images.length})</span>
@@ -682,12 +683,8 @@ export default function AdminDashboard({ admin }: { admin: string }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {images.map(img => (
               <ProductCard
-                key={img.public_id}
-                item={img}
-                categories={categories}
-                backendUrl={backendUrl}
-                cloudName={cloudName}
-                uploadPreset={uploadPreset}
+                key={img.public_id} item={img} categories={categories}
+                backendUrl={backendUrl} cloudName={cloudName} uploadPreset={uploadPreset}
                 onDelete={() => handleDelete(img.public_id, img.id)}
                 onUpdated={updated => setImages(prev => prev.map(i => i.id === updated.id ? updated : i))}
               />
