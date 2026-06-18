@@ -26,15 +26,15 @@ export default function AdminLogin({ onLogin }: { onLogin: (username: string) =>
         body: JSON.stringify({ username, password }),
       });
       if (!res.ok) {
-        const text = await res.text();
-        setError(text || 'Login failed');
+        const data = await res.json().catch(() => ({}));
+        setError(data.detail || 'Login failed');
         setLoading(false);
         return;
       }
       const data = await res.json();
-      // Save token to localStorage
-      localStorage.setItem('token', data.access_token);
-      onLogin(username);
+      // Key must match authHeaders() in AdminDashboard which reads 'admin_token'
+      localStorage.setItem('admin_token', data.access_token);
+      onLogin(data.username || username);
       router.push('/admin');
     } catch (err: any) {
       setError(err.message || 'Network error');
@@ -49,11 +49,22 @@ export default function AdminLogin({ onLogin }: { onLogin: (username: string) =>
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Username</label>
-          <input value={username} onChange={e => setUsername(e.target.value)} className="input w-full" />
+          <input
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            autoComplete="username"
+            className="input w-full"
+          />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Password</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="input w-full" />
+          <input
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            autoComplete="current-password"
+            className="input w-full"
+          />
         </div>
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <div className="flex justify-end">
