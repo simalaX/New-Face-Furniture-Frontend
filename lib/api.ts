@@ -1,12 +1,13 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Use NEXT_PUBLIC_BACKEND_URL consistently across the whole app
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://new-face-backend-ba3q.onrender.com';
 
 const api = axios.create({ baseURL: `${API_URL}/api/v1` });
 
-// Attach token to every request automatically
+// Attach token to every request — key matches AdminLogin + AdminDashboard
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('admin_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -18,7 +19,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
+      localStorage.removeItem('admin_token');
       window.location.href = '/admin/login';
     }
     return Promise.reject(error);
