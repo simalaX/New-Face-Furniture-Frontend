@@ -24,14 +24,21 @@ const PRICE_RANGES = [
 ];
 
 const DEFAULT_CATEGORIES = [
-  { id: 1, name: 'Sofas', slug: 'sofas' },
-  { id: 2, name: 'Beds', slug: 'beds' },
+  { id: 1, name: 'Sofas & Seating', slug: 'sofas-seating' },
+  { id: 2, name: 'Beds & Bedroom', slug: 'beds-bedroom' },
   { id: 3, name: 'Dining Sets', slug: 'dining-sets' },
   { id: 4, name: 'Coffee Tables', slug: 'coffee-tables' },
   { id: 5, name: 'TV Stands', slug: 'tv-stands' },
   { id: 6, name: 'Wardrobes', slug: 'wardrobes' },
-  { id: 7, name: 'Office', slug: 'office' },
-  { id: 8, name: 'Custom', slug: 'custom' },
+  { id: 7, name: 'Office Furniture', slug: 'office-furniture' },
+  { id: 8, name: 'Accent Chairs', slug: 'accent-chairs' },
+  { id: 9, name: 'Outdoor Furniture', slug: 'outdoor-furniture' },
+  { id: 10, name: 'Storage Solutions', slug: 'storage-solutions' },
+  { id: 11, name: 'Hotel & Restaurant', slug: 'hotel-restaurant' },
+  { id: 12, name: 'Airbnb Furnishing', slug: 'airbnb-furnishing' },
+  { id: 13, name: 'Lounges', slug: 'lounges' },
+  { id: 14, name: 'Bar Stools', slug: 'bar-stools' },
+  { id: 15, name: 'Custom', slug: 'custom' },
 ];
 
 function ProductsContent() {
@@ -147,8 +154,8 @@ function ProductsContent() {
                   {allCats.map(cat => (
                     <button key={cat.slug} onClick={() => setSelectedCat(cat.slug)}
                       className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${selectedCat === cat.slug
-                          ? 'bg-primary-50 text-primary-700 font-medium'
-                          : 'text-gray-700 hover:bg-gray-50'
+                        ? 'bg-primary-50 text-primary-700 font-medium'
+                        : 'text-gray-700 hover:bg-gray-50'
                         }`}>
                       {cat.name}
                     </button>
@@ -161,8 +168,8 @@ function ProductsContent() {
                   {PRICE_RANGES.map(r => (
                     <button key={r.value} onClick={() => setPriceRange(r.value)}
                       className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${priceRange === r.value
-                          ? 'bg-primary-50 text-primary-700 font-medium'
-                          : 'text-gray-700 hover:bg-gray-50'
+                        ? 'bg-primary-50 text-primary-700 font-medium'
+                        : 'text-gray-700 hover:bg-gray-50'
                         }`}>
                       {r.label}
                     </button>
