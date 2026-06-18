@@ -31,7 +31,7 @@ ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
 SECRET_KEY = os.getenv('SECRET_KEY')
 ALGORITHM = os.getenv('ALGORITHM', 'HS256')
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES', '60'))
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://newfacefurniture.co.ke')
 
 if not DATABASE_URL:
     raise RuntimeError('Set DATABASE_URL in .env')

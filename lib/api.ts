@@ -2,8 +2,28 @@ import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-// include credentials so server-side auth cookies are sent with requests
-const api = axios.create({ baseURL: `${API_URL}/api/v1`, withCredentials: true });
+const api = axios.create({ baseURL: `${API_URL}/api/v1` });
+
+// Attach token to every request automatically
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// If token expires, redirect to login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/admin/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const productsApi = {
   getAll: (params?: { category_id?: number; featured?: boolean; search?: string; skip?: number; limit?: number }) =>
@@ -49,7 +69,6 @@ export const customOrdersApi = {
   uploadImage: (file: File) => {
     const fd = new FormData();
     fd.append('file', file);
-    // let the browser set the multipart boundary header automatically
     return api.post('/custom-orders/upload-image', fd).then(r => r.data);
   },
   uploadProductImage: (file: File) => {

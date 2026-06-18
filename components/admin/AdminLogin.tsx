@@ -23,7 +23,6 @@ export default function AdminLogin({ onLogin }: { onLogin: (username: string) =>
       const res = await fetch(`${backendUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ username, password }),
       });
       if (!res.ok) {
@@ -32,6 +31,9 @@ export default function AdminLogin({ onLogin }: { onLogin: (username: string) =>
         setLoading(false);
         return;
       }
+      const data = await res.json();
+      // Save token to localStorage
+      localStorage.setItem('token', data.access_token);
       onLogin(username);
       router.push('/admin');
     } catch (err: any) {
@@ -55,7 +57,9 @@ export default function AdminLogin({ onLogin }: { onLogin: (username: string) =>
         </div>
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <div className="flex justify-end">
-          <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</button>
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
         </div>
       </form>
     </div>
