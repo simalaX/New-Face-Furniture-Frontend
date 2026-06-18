@@ -139,14 +139,17 @@ function ProductsContent() {
         )}
 
         <div className="flex gap-8">
-          <aside className={${showFilters ? 'block' : 'hidden'} sm:block w-full sm:w-56 flex-shrink-0}>
+          <aside className={`${showFilters ? 'block' : 'hidden'} sm:block w-full sm:w-56 flex-shrink-0`}>
             <div className="bg-white rounded-2xl p-5 shadow-sm sticky top-24 space-y-6">
               <div>
                 <h3 className="font-serif font-semibold text-dark mb-3">Categories</h3>
                 <div className="space-y-1">
                   {allCats.map(cat => (
                     <button key={cat.slug} onClick={() => setSelectedCat(cat.slug)}
-                      className={w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors }>
+                      className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${selectedCat === cat.slug
+                          ? 'bg-primary-50 text-primary-700 font-medium'
+                          : 'text-gray-700 hover:bg-gray-50'
+                        }`}>
                       {cat.name}
                     </button>
                   ))}
@@ -157,7 +160,10 @@ function ProductsContent() {
                 <div className="space-y-1">
                   {PRICE_RANGES.map(r => (
                     <button key={r.value} onClick={() => setPriceRange(r.value)}
-                      className={w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors }>
+                      className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${priceRange === r.value
+                          ? 'bg-primary-50 text-primary-700 font-medium'
+                          : 'text-gray-700 hover:bg-gray-50'
+                        }`}>
                       {r.label}
                     </button>
                   ))}
