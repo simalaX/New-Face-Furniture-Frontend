@@ -14,13 +14,21 @@ const FALLBACK = (
 
 const CATEGORIES = [
   { label: 'All', slug: 'all' },
-  { label: 'Sofas', slug: 'sofas' },
-  { label: 'Beds', slug: 'beds' },
+  { label: 'Sofas & Seating', slug: 'sofas-seating' },
+  { label: 'Beds & Bedroom', slug: 'beds-bedroom' },
   { label: 'Dining Sets', slug: 'dining-sets' },
   { label: 'Coffee Tables', slug: 'coffee-tables' },
   { label: 'TV Stands', slug: 'tv-stands' },
   { label: 'Wardrobes', slug: 'wardrobes' },
-  { label: 'Office', slug: 'office' },
+  { label: 'Office Furniture', slug: 'office-furniture' },
+  { label: 'Accent Chairs', slug: 'accent-chairs' },
+  { label: 'Outdoor Furniture', slug: 'outdoor-furniture' },
+  { label: 'Storage Solutions', slug: 'storage-solutions' },
+  { label: 'Hotel & Restaurant', slug: 'hotel-restaurant' },
+  { label: 'Airbnb Furnishing', slug: 'airbnb-furnishing' },
+  { label: 'Lounges', slug: 'lounges' },
+  { label: 'Bar Stools', slug: 'bar-stools' },
+  { label: 'Custom', slug: 'custom' },
 ];
 
 const PRICE_RANGES = [
@@ -185,8 +193,8 @@ export default function HeroSection() {
                     type="button"
                     onClick={() => setCategory(c.slug)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${category === c.slug
-                        ? 'bg-[#8B5E3C] border-[#8B5E3C] text-white'
-                        : 'bg-white/15 border-white/25 text-white hover:bg-white/25'
+                      ? 'bg-[#8B5E3C] border-[#8B5E3C] text-white'
+                      : 'bg-white/15 border-white/25 text-white hover:bg-white/25'
                       }`}
                   >
                     {c.label}
@@ -196,8 +204,8 @@ export default function HeroSection() {
                   type="button"
                   onClick={() => setShowAdvanced(v => !v)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border flex items-center gap-1.5 ${showAdvanced
-                      ? 'bg-white/25 border-white/40 text-white'
-                      : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/20'
+                    ? 'bg-white/25 border-white/40 text-white'
+                    : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/20'
                     }`}
                 >
                   <SlidersHorizontal size={12} /> Advanced
