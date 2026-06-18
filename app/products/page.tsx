@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import { SlidersHorizontal, X } from 'lucide-react';
@@ -11,15 +11,15 @@ const sortOptions = [
   { value: 'default', label: 'Default' },
   { value: 'price-asc', label: 'Price: Low to High' },
   { value: 'price-desc', label: 'Price: High to Low' },
-  { value: 'name-asc', label: 'Name A–Z' },
+  { value: 'name-asc', label: 'Name A-Z' },
 ];
 
 const PRICE_RANGES = [
   { label: 'Any Price', value: '' },
   { label: 'Under KES 20K', value: '0-20000' },
-  { label: 'KES 20K – 50K', value: '20000-50000' },
-  { label: 'KES 50K – 100K', value: '50000-100000' },
-  { label: 'KES 100K – 200K', value: '100000-200000' },
+  { label: 'KES 20K - 50K', value: '20000-50000' },
+  { label: 'KES 50K - 100K', value: '50000-100000' },
+  { label: 'KES 100K - 200K', value: '100000-200000' },
   { label: 'Above KES 200K', value: '200000-999999999' },
 ];
 
@@ -34,7 +34,7 @@ const DEFAULT_CATEGORIES = [
   { id: 8, name: 'Custom', slug: 'custom' },
 ];
 
-export default function ProductsPage() {
+function ProductsContent() {
   const searchParams = useSearchParams();
 
   const categoryParam = searchParams.get('category') || 'all';
@@ -98,7 +98,6 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Page Header */}
       <div className="bg-dark text-white py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-secondary-400 text-sm uppercase tracking-widest mb-2">Our Collection</p>
@@ -108,21 +107,13 @@ export default function ProductsPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-
-        {/* Sort + mobile filter toggle */}
         <div className="flex items-center justify-between gap-4 mb-6">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="sm:hidden flex items-center gap-2 border border-gray-200 bg-white rounded-lg px-4 py-2.5 text-sm font-medium"
-          >
+          <button onClick={() => setShowFilters(!showFilters)} className="sm:hidden flex items-center gap-2 border border-gray-200 bg-white rounded-lg px-4 py-2.5 text-sm font-medium">
             <SlidersHorizontal size={16} /> Filters
           </button>
           <div className="flex items-center gap-3 ml-auto">
             {hasActiveFilters && (
-              <button onClick={clearAll}
-                className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors">
-                Clear filters
-              </button>
+              <button onClick={clearAll} className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors">Clear filters</button>
             )}
             <select value={sort} onChange={e => setSort(e.target.value)} className="input bg-white w-52">
               {sortOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -130,7 +121,6 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* Active filter pills */}
         {hasActiveFilters && (
           <div className="flex flex-wrap gap-2 mb-6">
             {selectedCat !== 'all' && (
@@ -149,84 +139,47 @@ export default function ProductsPage() {
         )}
 
         <div className="flex gap-8">
-          {/* Sidebar */}
-          <aside className={`${showFilters ? 'block' : 'hidden'} sm:block w-full sm:w-56 flex-shrink-0`}>
+          <aside className={${showFilters ? 'block' : 'hidden'} sm:block w-full sm:w-56 flex-shrink-0}>
             <div className="bg-white rounded-2xl p-5 shadow-sm sticky top-24 space-y-6">
-
-              {/* Categories */}
               <div>
                 <h3 className="font-serif font-semibold text-dark mb-3">Categories</h3>
                 <div className="space-y-1">
                   {allCats.map(cat => (
-                    <button
-                      key={cat.slug}
-                      onClick={() => setSelectedCat(cat.slug)}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${selectedCat === cat.slug
-                          ? 'bg-primary-50 text-primary-600 font-medium'
-                          : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
+                    <button key={cat.slug} onClick={() => setSelectedCat(cat.slug)}
+                      className={w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors }>
                       {cat.name}
                     </button>
                   ))}
                 </div>
               </div>
-
-              {/* Price Range */}
               <div>
                 <h3 className="font-serif font-semibold text-dark mb-3">Price Range</h3>
                 <div className="space-y-1">
                   {PRICE_RANGES.map(r => (
-                    <button
-                      key={r.value}
-                      onClick={() => setPriceRange(r.value)}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${priceRange === r.value
-                          ? 'bg-primary-50 text-primary-600 font-medium'
-                          : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
+                    <button key={r.value} onClick={() => setPriceRange(r.value)}
+                      className={w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors }>
                       {r.label}
                     </button>
                   ))}
                 </div>
               </div>
-
             </div>
           </aside>
 
-          {/* Product grid */}
           <div className="flex-1">
             <div className="flex items-center justify-between mb-5">
-              <p className="text-gray-500 text-sm">
-                {filtered.length} product{filtered.length !== 1 ? 's' : ''} found
-              </p>
+              <p className="text-gray-500 text-sm">{filtered.length} product{filtered.length !== 1 ? 's' : ''} found</p>
             </div>
-
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-2xl h-72 animate-pulse" />
-                ))}
+                {[...Array(6)].map((_, i) => <div key={i} className="bg-white rounded-2xl h-72 animate-pulse" />)}
               </div>
             ) : filtered.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-2xl">
-                <div className="text-5xl mb-4">🛋️</div>
-                <h3 className="font-serif text-xl font-bold text-dark mb-2">
-                  {products.length === 0 ? 'Products Coming Soon' : 'No products found'}
-                </h3>
-                <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">
-                  {products.length === 0
-                    ? "We're adding our collection. Contact us on WhatsApp to see what's available now."
-                    : 'Try a different category or price range.'}
-                </p>
+                <h3 className="font-serif text-xl font-bold text-dark mb-2">{products.length === 0 ? 'Products Coming Soon' : 'No products found'}</h3>
+                <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">{products.length === 0 ? "We're adding our collection. Contact us on WhatsApp to see what's available now." : 'Try a different category or price range.'}</p>
                 {products.length === 0 ? (
-                  <a
-                    href="https://wa.me/254115990547?text=Hi, I'd like to see your furniture collection"
-                    target="_blank" rel="noreferrer"
-                    className="btn-primary inline-flex"
-                  >
-                    Chat on WhatsApp
-                  </a>
+                  <a href="https://wa.me/254115990547?text=Hi, I'd like to see your furniture collection" target="_blank" rel="noreferrer" className="btn-primary inline-flex">Chat on WhatsApp</a>
                 ) : (
                   <button onClick={clearAll} className="btn-outline">Clear filters</button>
                 )}
@@ -234,12 +187,7 @@ export default function ProductsPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filtered.map((p, i) => (
-                  <motion.div
-                    key={p.id}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                  >
+                  <motion.div key={p.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                     <ProductCard product={p} />
                   </motion.div>
                 ))}
@@ -249,5 +197,13 @@ export default function ProductsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-cream flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div></div>}>
+      <ProductsContent />
+    </Suspense>
   );
 }
