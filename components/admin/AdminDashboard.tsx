@@ -424,15 +424,24 @@ export default function AdminDashboard({ admin }: { admin: string }) {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://new-face-backend-ba3q.onrender.com';
   const setupMissing = !cloudName || !uploadPreset;
 
+  // Mirrors the /seed-categories list in main.py exactly (id = seed order, 1-indexed).
+  // Used only as a fallback if the categories endpoint fails to respond.
   const defaultCategories: Category[] = [
-    { id: 1, name: 'Sofas', slug: 'sofas' },
-    { id: 2, name: 'Beds', slug: 'beds' },
+    { id: 1, name: 'Sofas & Seating', slug: 'sofas-seating' },
+    { id: 2, name: 'Beds & Bedroom', slug: 'beds-bedroom' },
     { id: 3, name: 'Dining Sets', slug: 'dining-sets' },
     { id: 4, name: 'Coffee Tables', slug: 'coffee-tables' },
     { id: 5, name: 'TV Stands', slug: 'tv-stands' },
     { id: 6, name: 'Wardrobes', slug: 'wardrobes' },
-    { id: 7, name: 'Office', slug: 'office' },
-    { id: 8, name: 'Custom', slug: 'custom' },
+    { id: 7, name: 'Office Furniture', slug: 'office-furniture' },
+    { id: 8, name: 'Accent Chairs', slug: 'accent-chairs' },
+    { id: 9, name: 'Outdoor Furniture', slug: 'outdoor-furniture' },
+    { id: 10, name: 'Storage Solutions', slug: 'storage-solutions' },
+    { id: 11, name: 'Hotel & Restaurant', slug: 'hotel-restaurant' },
+    { id: 12, name: 'Airbnb Furnishing', slug: 'airbnb-furnishing' },
+    { id: 13, name: 'Lounges', slug: 'lounges' },
+    { id: 14, name: 'Bar Stools', slug: 'bar-stools' },
+    { id: 15, name: 'Custom', slug: 'custom' },
   ];
 
   useEffect(() => {
