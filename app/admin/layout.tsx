@@ -16,6 +16,19 @@ const navLinks = [
   { href: '/admin/custom-orders', label: 'Custom Orders', icon: Ruler },
 ];
 
+// ─── Helper ───────────────────────────────────────────────────────────────────
+function authFetch(url: string, options: RequestInit = {}) {
+  const token = localStorage.getItem('admin_token');
+  return fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+}
+
 // ─── Login Screen ─────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const [username, setUsername] = useState('');
@@ -36,18 +49,15 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
       const res = await fetch(`${BACKEND_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ username: username.trim(), password }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.detail || 'Invalid credentials');
       }
-      // Re-verify the cookie was actually set server-side before granting access
-      const meRes = await fetch(`${BACKEND_URL}/auth/me`, { credentials: 'include' });
-      if (!meRes.ok) throw new Error('Session not established');
-      const meData = await meRes.json().catch(() => ({}));
-      if (!meData.username) throw new Error('Session not established');
+      const data = await res.json();
+      // Save token to localStorage
+      localStorage.setItem('admin_token', data.access_token);
       onLogin();
     } catch (err: any) {
       setError(err.message || 'Login failed');
@@ -167,10 +177,8 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
     if (newPassword !== confirmPassword) { setError('New passwords do not match'); return; }
     setLoading(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/auth/change-password`, {
+      const res = await authFetch(`${BACKEND_URL}/auth/change-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
       });
       if (!res.ok) {
@@ -259,9 +267,7 @@ function AvatarMenu({ onLogout }: { onLogout: () => void }) {
   }, []);
 
   async function handleLogout() {
-    try {
-      await fetch(`${BACKEND_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
-    } catch { }
+    localStorage.removeItem('admin_token');
     setOpen(false);
     onLogout();
   }
@@ -314,7 +320,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
 
   useEffect(() => {
-    fetch(`${BACKEND_URL}/auth/me`, { credentials: 'include' })
+    const token = localStorage.getItem('admin_token');
+    if (!token) {
+      setAuthStatus('unauthenticated');
+      return;
+    }
+    fetch(`${BACKEND_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
       .then(res => {
         if (!res.ok) throw new Error('Not authenticated');
         return res.json();
@@ -323,7 +336,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         if (!data.username) throw new Error('Not authenticated');
         setAuthStatus('authenticated');
       })
-      .catch(() => setAuthStatus('unauthenticated'));
+      .catch(() => {
+        localStorage.removeItem('admin_token');
+        setAuthStatus('unauthenticated');
+      });
   }, []);
 
   if (authStatus === 'checking') {
