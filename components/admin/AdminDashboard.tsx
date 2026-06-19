@@ -26,6 +26,10 @@ interface Category {
   slug: string;
 }
 
+// Sentinel value used by the <select> to represent "type your own category".
+// Never sent to the backend directly — it just toggles the free-text input.
+const OTHER_CATEGORY_VALUE = '__other__';
+
 // ─── Auth helper ──────────────────────────────────────────────────────────────
 function authHeaders(): HeadersInit {
   const token = localStorage.getItem('admin_token');
@@ -33,6 +37,97 @@ function authHeaders(): HeadersInit {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
+}
+
+// ─── Slug helper ───────────────────────────────────────────────────────────────
+function slugify(input: string): string {
+  return input.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+}
+
+// ─── Resolve-or-create category helper ─────────────────────────────────────────
+// If the admin typed a new category name, check (case-insensitively) whether it
+// already exists in the loaded list; if so reuse its id, otherwise POST a new
+// category to the backend and return the freshly created id.
+//
+// NOTE: assumes POST {backendUrl}/api/v1/categories/ accepts { name, slug } and
+// returns the created row (including its id), mirroring the products endpoint.
+// Verify this matches your categories router — adjust the body/parsing below
+// if your schema differs.
+async function resolveCategoryId(
+  newCategoryName: string,
+  categories: Category[],
+  backendUrl: string,
+): Promise<{ id: number; category?: Category }> {
+  const trimmed = newCategoryName.trim();
+  if (!trimmed) throw new Error('Category name is required');
+
+  const existing = categories.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
+  if (existing) return { id: existing.id };
+
+  const slug = slugify(trimmed);
+  const res = await fetch(`${backendUrl}/api/v1/categories/`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ name: trimmed, slug }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to create category (${res.status})`);
+  }
+
+  const created = await res.json();
+  return { id: created.id, category: created };
+}
+
+// ─── Category Select (with "Other" escape hatch) ───────────────────────────────
+function CategorySelect({
+  categories, categoryId, onCategoryIdChange, newCategoryName, onNewCategoryNameChange,
+}: {
+  categories: Category[];
+  categoryId: number | null;
+  onCategoryIdChange: (id: number | null) => void;
+  newCategoryName: string;
+  onNewCategoryNameChange: (name: string) => void;
+}) {
+  const isOther = categoryId === null;
+
+  function handleSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const val = e.target.value;
+    if (val === OTHER_CATEGORY_VALUE) {
+      onCategoryIdChange(null);
+    } else {
+      onCategoryIdChange(Number(val));
+      onNewCategoryNameChange('');
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <select
+        value={isOther ? OTHER_CATEGORY_VALUE : (categoryId ?? '')}
+        onChange={handleSelectChange}
+        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+      >
+        {categories.length === 0 && <option value="">No categories</option>}
+        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        <option value={OTHER_CATEGORY_VALUE}>Other (type your own)…</option>
+      </select>
+      {isOther && (
+        <input
+          value={newCategoryName}
+          onChange={e => onNewCategoryNameChange(e.target.value)}
+          placeholder="New category name"
+          className="w-full mt-2 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+      )}
+      {isOther && (
+        <p className="text-xs text-gray-400 mt-1">
+          This will create a new category when you save.
+        </p>
+      )}
+    </div>
+  );
 }
 
 // ─── Highlight helper ─────────────────────────────────────────────────────────
@@ -142,7 +237,7 @@ function ChangePasswordModal({ backendUrl, onClose }: { backendUrl: string; onCl
 
 // ─── Edit Product Modal ───────────────────────────────────────────────────────
 function EditProductModal({
-  item, categories, backendUrl, cloudName, uploadPreset, onClose, onSaved,
+  item, categories, backendUrl, cloudName, uploadPreset, onClose, onSaved, onCategoryCreated,
 }: {
   item: ImageItem;
   categories: Category[];
@@ -151,6 +246,7 @@ function EditProductModal({
   uploadPreset: string;
   onClose: () => void;
   onSaved: (updated: ImageItem) => void;
+  onCategoryCreated: (category: Category) => void;
 }) {
   const [title, setTitle] = useState(item.title || '');
   const [description, setDescription] = useState(item.description || '');
@@ -160,7 +256,8 @@ function EditProductModal({
   const [materials, setMaterials] = useState(item.materials || '');
   const [isFeatured, setIsFeatured] = useState(item.is_featured || false);
   const [inStock, setInStock] = useState(item.in_stock !== false);
-  const [categoryId, setCategoryId] = useState(item.category_id || categories[0]?.id);
+  const [categoryId, setCategoryId] = useState<number | null>(item.category_id ?? categories[0]?.id ?? null);
+  const [newCategoryName, setNewCategoryName] = useState('');
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -175,6 +272,7 @@ function EditProductModal({
 
   async function handleSave() {
     if (!title.trim()) { toast.error('Title is required'); return; }
+    if (categoryId === null && !newCategoryName.trim()) { toast.error('Enter a category name'); return; }
     setSaving(true);
     try {
       let imageUrl = item.secure_url;
@@ -188,7 +286,14 @@ function EditProductModal({
         imageUrl = cloudData.secure_url;
       }
 
-      const slug = title.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      let resolvedCategoryId = categoryId;
+      if (resolvedCategoryId === null) {
+        const { id, category } = await resolveCategoryId(newCategoryName, categories, backendUrl);
+        resolvedCategoryId = id;
+        if (category) onCategoryCreated(category);
+      }
+
+      const slug = slugify(title);
 
       const res = await fetch(`${backendUrl}/api/v1/products/${item.id}/`, {
         method: 'PUT',
@@ -203,7 +308,7 @@ function EditProductModal({
           materials: materials.trim() || null,
           is_featured: isFeatured,
           in_stock: inStock,
-          category_id: categoryId,
+          category_id: resolvedCategoryId,
         }),
       });
 
@@ -271,10 +376,13 @@ function EditProductModal({
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Category</label>
-              <select value={categoryId} onChange={e => setCategoryId(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <CategorySelect
+                categories={categories}
+                categoryId={categoryId}
+                onCategoryIdChange={setCategoryId}
+                newCategoryName={newCategoryName}
+                onNewCategoryNameChange={setNewCategoryName}
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -344,7 +452,7 @@ function EditProductModal({
 
 // ─── Product Card ─────────────────────────────────────────────────────────────
 function ProductCard({
-  item, categories, backendUrl, cloudName, uploadPreset, onDelete, onUpdated,
+  item, categories, backendUrl, cloudName, uploadPreset, onDelete, onUpdated, onCategoryCreated,
 }: {
   item: ImageItem;
   categories: Category[];
@@ -353,6 +461,7 @@ function ProductCard({
   uploadPreset: string;
   onDelete: () => void;
   onUpdated: (updated: ImageItem) => void;
+  onCategoryCreated: (category: Category) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const cat = categories.find(c => c.id === item.category_id);
@@ -365,6 +474,7 @@ function ProductCard({
           cloudName={cloudName} uploadPreset={uploadPreset}
           onClose={() => setEditing(false)}
           onSaved={updated => { onUpdated(updated); setEditing(false); }}
+          onCategoryCreated={onCategoryCreated}
         />
       )}
       <img src={item.secure_url} alt={item.title || 'product'} className="w-full h-48 object-cover" />
@@ -415,6 +525,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState('');
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [fileName, setFileName] = useState('');
   const router = useRouter();
@@ -486,6 +597,13 @@ export default function AdminDashboard({ admin }: { admin: string }) {
     loadProducts();
   }, []);
 
+  // Called whenever the "Other" path creates a brand-new category, from either
+  // the upload form or an edit modal, so the dropdown list stays in sync without
+  // needing a full re-fetch.
+  function handleCategoryCreated(category: Category) {
+    setCategories(prev => (prev.some(c => c.id === category.id) ? prev : [...prev, category]));
+  }
+
   if (setupMissing) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-2xl p-6 max-w-2xl">
@@ -504,7 +622,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
     const file = fileRef.current?.files?.[0];
     if (!file) { toast.error('Select an image first'); return; }
     if (!title.trim()) { toast.error('Title is required'); return; }
-    if (!categoryId) { toast.error('Select a category'); return; }
+    if (categoryId === null && !newCategoryName.trim()) { toast.error('Select or enter a category'); return; }
 
     setUploading(true);
     const fd = new FormData();
@@ -516,7 +634,14 @@ export default function AdminDashboard({ admin }: { admin: string }) {
       const cloudData = await cloudRes.json();
       if (cloudData.error) throw new Error(cloudData.error.message || 'Cloudinary upload failed');
 
-      const slug = title.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      let resolvedCategoryId = categoryId;
+      if (resolvedCategoryId === null) {
+        const { id, category } = await resolveCategoryId(newCategoryName, categories, backendUrl);
+        resolvedCategoryId = id;
+        if (category) handleCategoryCreated(category);
+      }
+
+      const slug = slugify(title);
 
       const backendRes = await fetch(`${backendUrl}/api/v1/products/`, {
         method: 'POST',
@@ -529,7 +654,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
           images: [cloudData.secure_url],
           dimensions: null, materials: null,
           is_featured: false, in_stock: true,
-          category_id: categoryId,
+          category_id: resolvedCategoryId,
         }),
       });
 
@@ -556,10 +681,10 @@ export default function AdminDashboard({ admin }: { admin: string }) {
       }, ...prev]);
 
       toast.success('Product saved!');
-      setTitle(''); setDescription(''); setPrice(''); setFileName('');
+      setTitle(''); setDescription(''); setPrice(''); setFileName(''); setNewCategoryName('');
       if (fileRef.current) fileRef.current.value = '';
 
-      const cat = categories.find(c => c.id === categoryId);
+      const cat = categories.find(c => c.id === resolvedCategoryId);
       if (cat?.slug) router.push(`/products?category=${encodeURIComponent(cat.slug)}`);
     } catch (err: any) {
       toast.error('Error: ' + (err.message || err));
@@ -633,11 +758,13 @@ export default function AdminDashboard({ admin }: { admin: string }) {
           </div>
           <div className="flex flex-col gap-1">
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Category</label>
-            <select value={categoryId ?? ''} onChange={e => setCategoryId(Number(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-              {categories.length === 0 && <option value="">No categories</option>}
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <CategorySelect
+              categories={categories}
+              categoryId={categoryId}
+              onCategoryIdChange={setCategoryId}
+              newCategoryName={newCategoryName}
+              onNewCategoryNameChange={setNewCategoryName}
+            />
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
@@ -696,6 +823,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
                 backendUrl={backendUrl} cloudName={cloudName} uploadPreset={uploadPreset}
                 onDelete={() => handleDelete(img.public_id, img.id)}
                 onUpdated={updated => setImages(prev => prev.map(i => i.id === updated.id ? updated : i))}
+                onCategoryCreated={handleCategoryCreated}
               />
             ))}
           </div>
