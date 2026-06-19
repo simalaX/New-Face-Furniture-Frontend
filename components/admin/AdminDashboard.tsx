@@ -113,22 +113,23 @@ function CategorySelect({
         onChange={handleSelectChange}
         className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
       >
-        {categories.length === 0 && <option value="">No categories</option>}
-        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        <option value={OTHER_CATEGORY_VALUE}>Other (type your own)…</option>
+        {categories.map(c => (
+          <option key={c.id} value={c.id}>{c.name}</option>
+        ))}
+        <option value={OTHER_CATEGORY_VALUE}>Other (add new)</option>
       </select>
       {isOther && (
-        <input
-          value={newCategoryName}
-          onChange={e => onNewCategoryNameChange(e.target.value)}
-          placeholder="New category name"
-          className="w-full mt-2 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-        />
-      )}
-      {isOther && (
-        <p className="text-xs text-gray-400 mt-1">
-          This will create a new category when you save.
-        </p>
+        <>
+          <input
+            value={newCategoryName}
+            onChange={e => onNewCategoryNameChange(e.target.value)}
+            placeholder="New category name"
+            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 mt-1"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            This will create a new category when you save.
+          </p>
+        </>
       )}
     </div>
   );
@@ -836,31 +837,33 @@ export default function AdminDashboard({ admin }: { admin: string }) {
               </div>
             )}
 
-            <div
-              className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary-400 transition-colors min-h-[80px]"
-              onClick={() => fileRef.current?.click()}
-            >
-              <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span className="text-xs text-gray-400 text-center">
-                {selectedFiles.length > 0
-                  ? `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected — click to change`
-                  : 'Click to choose files'}
-              </span>
+            <div className="relative">
+              <div
+                className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary-400 transition-colors min-h-[80px]"
+              >
+                <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="text-xs text-gray-400 text-center">
+                  {selectedFiles.length > 0
+                    ? `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected — click to change`
+                    : 'Click to choose files'}
+                </span>
+              </div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                // visible to the browser as the click target (opacity 0 overlay)
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                onChange={handleFileChange}
+              />
+              {selectedFiles.length > 0 && (
+                <p className="text-xs text-primary-500 font-medium">{selectedFiles.length} image{selectedFiles.length > 1 ? 's' : ''} ready to upload</p>
+              )}
             </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            {selectedFiles.length > 0 && (
-              <p className="text-xs text-primary-500 font-medium">{selectedFiles.length} image{selectedFiles.length > 1 ? 's' : ''} ready to upload</p>
-            )}
           </div>
 
           <div className="flex flex-col gap-1">
@@ -881,33 +884,33 @@ export default function AdminDashboard({ admin }: { admin: string }) {
               onNewCategoryNameChange={setNewCategoryName}
             />
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
-          <div className="flex flex-col gap-1">
-            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Price (KES)</label>
-            <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g. 15000"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Date Added <span className="text-red-500">*</span>
-            </label>
-            <input type="date" required value={dateAdded} onChange={e => setDateAdded(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
-          </div>
-          <div className="sm:col-span-2 flex flex-col gap-1">
-            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Description <span className="ml-2 font-normal normal-case text-gray-400 text-xs">— key terms highlighted automatically</span>
-            </label>
-            <input value={description} onChange={e => setDescription(e.target.value)}
-              placeholder="e.g. Premium solid mahogany 6-seater dining set with glossy finish"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
-            {description && (
-              <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100 leading-relaxed">
-                {highlightDescription(description)}
-              </p>
-            )}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-5 sm:col-span-3">
+            <div className="flex flex-col gap-1">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Price (KES)</label>
+              <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g. 15000"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Date Added <span className="text-red-500">*</span>
+              </label>
+              <input type="date" required value={dateAdded} onChange={e => setDateAdded(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            <div className="sm:col-span-2 flex flex-col gap-1">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Description <span className="ml-2 font-normal normal-case text-gray-400 text-xs">— key terms highlighted automatically</span>
+              </label>
+              <input value={description} onChange={e => setDescription(e.target.value)}
+                placeholder="e.g. Premium solid mahogany 6-seater dining set with glossy finish"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              {description && (
+                <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100 leading-relaxed">
+                  {highlightDescription(description)}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
