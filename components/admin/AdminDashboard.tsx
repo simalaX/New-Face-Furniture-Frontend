@@ -28,8 +28,6 @@ interface Category {
   slug: string;
 }
 
-// Sentinel value used by the <select> to represent "type your own category".
-// Never sent to the backend directly — it just toggles the free-text input.
 const OTHER_CATEGORY_VALUE = '__other__';
 
 // ─── Date helpers ──────────────────────────────────────────────────────────────
@@ -59,14 +57,6 @@ function slugify(input: string): string {
 }
 
 // ─── Resolve-or-create category helper ─────────────────────────────────────────
-// If the admin typed a new category name, check (case-insensitively) whether it
-// already exists in the loaded list; if so reuse its id, otherwise POST a new
-// category to the backend and return the freshly created id.
-//
-// NOTE: assumes POST {backendUrl}/api/v1/categories/ accepts { name, slug } and
-// returns the created row (including its id), mirroring the products endpoint.
-// Verify this matches your categories router — adjust the body/parsing below
-// if your schema differs.
 async function resolveCategoryId(
   newCategoryName: string,
   categories: Category[],
@@ -94,7 +84,7 @@ async function resolveCategoryId(
   return { id: created.id, category: created };
 }
 
-// ─── Category Select (with "Other" escape hatch) ───────────────────────────────
+// ─── Category Select ───────────────────────────────────────────────────────────
 function CategorySelect({
   categories, categoryId, onCategoryIdChange, newCategoryName, onNewCategoryNameChange,
 }: {
@@ -582,8 +572,12 @@ export default function AdminDashboard({ admin }: { admin: string }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
+
+  // ── FIX: store actual File objects, not just names ─────────────────────────
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedPreviews, setSelectedPreviews] = useState<string[]>([]);
+
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const [fileNames, setFileNames] = useState<string[]>([]);
   const router = useRouter();
 
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '';
@@ -591,8 +585,6 @@ export default function AdminDashboard({ admin }: { admin: string }) {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://new-face-backend-ba3q.onrender.com';
   const setupMissing = !cloudName || !uploadPreset;
 
-  // Mirrors the /seed-categories list in main.py exactly (id = seed order, 1-indexed).
-  // Used only as a fallback if the categories endpoint fails to respond.
   const defaultCategories: Category[] = [
     { id: 1, name: 'Sofas & Seating', slug: 'sofas-seating' },
     { id: 2, name: 'Beds & Bedroom', slug: 'beds-bedroom' },
@@ -655,11 +647,24 @@ export default function AdminDashboard({ admin }: { admin: string }) {
     loadProducts();
   }, []);
 
-  // Called whenever the "Other" path creates a brand-new category, from either
-  // the upload form or an edit modal, so the dropdown list stays in sync without
-  // needing a full re-fetch.
   function handleCategoryCreated(category: Category) {
     setCategories(prev => (prev.some(c => c.id === category.id) ? prev : [...prev, category]));
+  }
+
+  // ── FIX: store File objects + generate previews ────────────────────────────
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setSelectedFiles(files);
+    // revoke old previews to avoid memory leaks
+    selectedPreviews.forEach(url => URL.revokeObjectURL(url));
+    setSelectedPreviews(files.map(f => URL.createObjectURL(f)));
+  }
+
+  function removeSelectedFile(index: number) {
+    URL.revokeObjectURL(selectedPreviews[index]);
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setSelectedPreviews(prev => prev.filter((_, i) => i !== index));
   }
 
   if (setupMissing) {
@@ -677,8 +682,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
 
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
-    const files = Array.from(fileRef.current?.files || []);
-    if (!files.length) { toast.error('Select at least one image'); return; }
+    if (!selectedFiles.length) { toast.error('Select at least one image'); return; }
     if (!title.trim()) { toast.error('Title is required'); return; }
     if (!dateAdded) { toast.error('Date is required'); return; }
     if (categoryId === null && !newCategoryName.trim()) { toast.error('Select or enter a category'); return; }
@@ -686,10 +690,11 @@ export default function AdminDashboard({ admin }: { admin: string }) {
     setUploading(true);
 
     try {
-      // Upload every selected file to Cloudinary, collecting their secure URLs.
       const uploadedUrls: string[] = [];
       let firstPublicId = '';
-      for (const file of files) {
+
+      // ── Upload every selected file to Cloudinary ───────────────────────────
+      for (const file of selectedFiles) {
         const fd = new FormData();
         fd.append('file', file);
         fd.append('upload_preset', uploadPreset);
@@ -749,9 +754,11 @@ export default function AdminDashboard({ admin }: { admin: string }) {
         created_at: saved.created_at || new Date(dateAdded).toISOString(),
       }, ...prev]);
 
-      toast.success('Product saved!');
-      setTitle(''); setDescription(''); setPrice(''); setFileNames([]); setNewCategoryName('');
+      toast.success(`Product saved with ${uploadedUrls.length} image${uploadedUrls.length > 1 ? 's' : ''}!`);
+      setTitle(''); setDescription(''); setPrice(''); setNewCategoryName('');
       setDateAdded(todayISODate());
+      setSelectedFiles([]);
+      setSelectedPreviews([]);
       if (fileRef.current) fileRef.current.value = '';
 
       const cat = categories.find(c => c.id === resolvedCategoryId);
@@ -803,27 +810,59 @@ export default function AdminDashboard({ admin }: { admin: string }) {
       <form onSubmit={handleUpload} className="bg-white p-6 rounded-2xl shadow mb-8 space-y-6">
         <h3 className="font-serif text-lg font-bold border-b pb-3">Upload New Product</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+
+          {/* ── Image picker with previews ─────────────────────────────────── */}
           <div className="flex flex-col gap-1">
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
               Product Images <span className="text-red-500">*</span>
-              <span className="ml-1 font-normal normal-case text-gray-400">(one or more)</span>
+              <span className="ml-1 font-normal normal-case text-gray-400">(select multiple)</span>
             </label>
-            <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary-400 transition-colors min-h-[100px]"
-              onClick={() => fileRef.current?.click()}>
-              <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+            {/* Previews grid */}
+            {selectedPreviews.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {selectedPreviews.map((url, i) => (
+                  <div key={i} className="relative">
+                    <img src={url} alt="" className="w-16 h-16 object-cover rounded-lg border border-gray-200" />
+                    <button
+                      type="button"
+                      onClick={() => removeSelectedFile(i)}
+                      className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600 leading-none"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div
+              className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary-400 transition-colors min-h-[80px]"
+              onClick={() => fileRef.current?.click()}
+            >
+              <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                   d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="text-xs text-gray-400 text-center break-all">
-                {fileNames.length > 0 ? `${fileNames.length} file(s) selected` : 'Click to choose file(s)'}
+              <span className="text-xs text-gray-400 text-center">
+                {selectedFiles.length > 0
+                  ? `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected — click to change`
+                  : 'Click to choose files'}
               </span>
             </div>
-            <input ref={fileRef} type="file" accept="image/*" multiple required className="hidden"
-              onChange={e => setFileNames(Array.from(e.target.files || []).map(f => f.name))} />
-            {fileNames.length > 0 && (
-              <p className="text-xs text-gray-400 mt-1 break-all">{fileNames.join(', ')}</p>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            {selectedFiles.length > 0 && (
+              <p className="text-xs text-primary-500 font-medium">{selectedFiles.length} image{selectedFiles.length > 1 ? 's' : ''} ready to upload</p>
             )}
           </div>
+
           <div className="flex flex-col gap-1">
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
               Title <span className="text-red-500">*</span>
@@ -843,6 +882,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
             />
           </div>
         </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
           <div className="flex flex-col gap-1">
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Price (KES)</label>
@@ -870,6 +910,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
             )}
           </div>
         </div>
+
         <div className="flex justify-end pt-1">
           <button type="submit" disabled={uploading}
             className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-50">
@@ -879,7 +920,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
-                Uploading...
+                Uploading {selectedFiles.length > 1 ? `${selectedFiles.length} images` : 'image'}...
               </span>
             ) : 'Upload'}
           </button>
