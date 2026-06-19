@@ -26,29 +26,33 @@ interface Category {
   slug: string;
 }
 
+// Sentinel value used by the <select> to represent "type your own category".
+// Never sent to the backend directly — it just toggles the free-text input.
 const OTHER_CATEGORY_VALUE = '__other__';
 
 // ─── Auth helper ──────────────────────────────────────────────────────────────
-// Checks every key/storage combo the token could possibly be saved under,
-// so this can never silently fail from a naming mismatch again.
 function authHeaders(): HeadersInit {
-  const token =
-    (typeof window !== 'undefined' && (
-      localStorage.getItem('admin_token') ||
-      localStorage.getItem('token') ||
-      sessionStorage.getItem('admin_token') ||
-      sessionStorage.getItem('token')
-    )) || '';
+  const token = localStorage.getItem('admin_token');
   return {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
 
+// ─── Slug helper ───────────────────────────────────────────────────────────────
 function slugify(input: string): string {
   return input.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
+// ─── Resolve-or-create category helper ─────────────────────────────────────────
+// If the admin typed a new category name, check (case-insensitively) whether it
+// already exists in the loaded list; if so reuse its id, otherwise POST a new
+// category to the backend and return the freshly created id.
+//
+// NOTE: assumes POST {backendUrl}/api/v1/categories/ accepts { name, slug } and
+// returns the created row (including its id), mirroring the products endpoint.
+// Verify this matches your categories router — adjust the body/parsing below
+// if your schema differs.
 async function resolveCategoryId(
   newCategoryName: string,
   categories: Category[],
@@ -76,6 +80,7 @@ async function resolveCategoryId(
   return { id: created.id, category: created };
 }
 
+// ─── Category Select (with "Other" escape hatch) ───────────────────────────────
 function CategorySelect({
   categories, categoryId, onCategoryIdChange, newCategoryName, onNewCategoryNameChange,
 }: {
@@ -125,6 +130,7 @@ function CategorySelect({
   );
 }
 
+// ─── Highlight helper ─────────────────────────────────────────────────────────
 const HIGHLIGHT_PATTERNS: RegExp[] = [
   /\b(\d+[-\s]?(seater|seat|door|drawer|piece|tier|shelf|shelves|person|pc|pcs)s?)\b/gi,
   /\b(\d+(?:\.\d+)?\s?(cm|mm|m|ft|inch|inches|kg|lbs)?)\b/gi,
@@ -148,6 +154,7 @@ function highlightDescription(text: string): React.ReactNode[] {
   return parts;
 }
 
+// ─── Password Change Modal ────────────────────────────────────────────────────
 function ChangePasswordModal({ backendUrl, onClose }: { backendUrl: string; onClose: () => void }) {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -228,6 +235,7 @@ function ChangePasswordModal({ backendUrl, onClose }: { backendUrl: string; onCl
   );
 }
 
+// ─── Edit Product Modal ───────────────────────────────────────────────────────
 function EditProductModal({
   item, categories, backendUrl, cloudName, uploadPreset, onClose, onSaved, onCategoryCreated,
 }: {
@@ -442,6 +450,7 @@ function EditProductModal({
   );
 }
 
+// ─── Product Card ─────────────────────────────────────────────────────────────
 function ProductCard({
   item, categories, backendUrl, cloudName, uploadPreset, onDelete, onUpdated, onCategoryCreated,
 }: {
@@ -506,6 +515,7 @@ function ProductCard({
   );
 }
 
+// ─── Main Admin Dashboard ─────────────────────────────────────────────────────
 export default function AdminDashboard({ admin }: { admin: string }) {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [title, setTitle] = useState('');
@@ -525,6 +535,8 @@ export default function AdminDashboard({ admin }: { admin: string }) {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://new-face-backend-ba3q.onrender.com';
   const setupMissing = !cloudName || !uploadPreset;
 
+  // Mirrors the /seed-categories list in main.py exactly (id = seed order, 1-indexed).
+  // Used only as a fallback if the categories endpoint fails to respond.
   const defaultCategories: Category[] = [
     { id: 1, name: 'Sofas & Seating', slug: 'sofas-seating' },
     { id: 2, name: 'Beds & Bedroom', slug: 'beds-bedroom' },
@@ -585,6 +597,9 @@ export default function AdminDashboard({ admin }: { admin: string }) {
     loadProducts();
   }, []);
 
+  // Called whenever the "Other" path creates a brand-new category, from either
+  // the upload form or an edit modal, so the dropdown list stays in sync without
+  // needing a full re-fetch.
   function handleCategoryCreated(category: Category) {
     setCategories(prev => (prev.some(c => c.id === category.id) ? prev : [...prev, category]));
   }
