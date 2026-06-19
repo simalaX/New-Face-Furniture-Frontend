@@ -8,6 +8,7 @@ interface ImageItem {
   id?: number;
   public_id: string;
   secure_url: string;
+  images?: string[];
   title?: string;
   description?: string;
   price?: number;
@@ -18,6 +19,7 @@ interface ImageItem {
   in_stock?: boolean;
   category_id?: number;
   slug?: string;
+  created_at?: string;
 }
 
 interface Category {
@@ -29,6 +31,18 @@ interface Category {
 // Sentinel value used by the <select> to represent "type your own category".
 // Never sent to the backend directly — it just toggles the free-text input.
 const OTHER_CATEGORY_VALUE = '__other__';
+
+// ─── Date helpers ──────────────────────────────────────────────────────────────
+function todayISODate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatDate(value?: string): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-KE', { year: 'numeric', month: 'short', day: 'numeric' });
+}
 
 // ─── Auth helper ──────────────────────────────────────────────────────────────
 function authHeaders(): HeadersInit {
@@ -258,33 +272,45 @@ function EditProductModal({
   const [inStock, setInStock] = useState(item.in_stock !== false);
   const [categoryId, setCategoryId] = useState<number | null>(item.category_id ?? categories[0]?.id ?? null);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [newImageFile, setNewImageFile] = useState<File | null>(null);
-  const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
+  const [dateAdded, setDateAdded] = useState(item.created_at ? item.created_at.slice(0, 10) : todayISODate());
+  const [existingImages, setExistingImages] = useState<string[]>(item.images && item.images.length ? item.images : (item.secure_url ? [item.secure_url] : []));
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
+  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setNewImageFile(f);
-    setNewImagePreview(URL.createObjectURL(f));
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setNewImageFiles(files);
+    setNewImagePreviews(files.map(f => URL.createObjectURL(f)));
+  }
+
+  function removeExistingImage(url: string) {
+    setExistingImages(prev => prev.filter(u => u !== url));
   }
 
   async function handleSave() {
     if (!title.trim()) { toast.error('Title is required'); return; }
     if (categoryId === null && !newCategoryName.trim()) { toast.error('Enter a category name'); return; }
+    if (!dateAdded) { toast.error('Date is required'); return; }
+    if (existingImages.length === 0 && newImageFiles.length === 0) { toast.error('At least one image is required'); return; }
     setSaving(true);
     try {
-      let imageUrl = item.secure_url;
-      if (newImageFile) {
-        const fd = new FormData();
-        fd.append('file', newImageFile);
-        fd.append('upload_preset', uploadPreset);
-        const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: fd });
-        const cloudData = await cloudRes.json();
-        if (cloudData.error) throw new Error(cloudData.error.message);
-        imageUrl = cloudData.secure_url;
+      let uploadedUrls: string[] = [];
+      if (newImageFiles.length) {
+        for (const f of newImageFiles) {
+          const fd = new FormData();
+          fd.append('file', f);
+          fd.append('upload_preset', uploadPreset);
+          const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: fd });
+          const cloudData = await cloudRes.json();
+          if (cloudData.error) throw new Error(cloudData.error.message);
+          uploadedUrls.push(cloudData.secure_url);
+        }
       }
+
+      const finalImages = [...existingImages, ...uploadedUrls];
 
       let resolvedCategoryId = categoryId;
       if (resolvedCategoryId === null) {
@@ -303,12 +329,13 @@ function EditProductModal({
           description: description.trim() || null,
           price: price ? parseFloat(price) : 0,
           original_price: originalPrice ? parseFloat(originalPrice) : null,
-          images: [imageUrl],
+          images: finalImages,
           dimensions: dimensions.trim() || null,
           materials: materials.trim() || null,
           is_featured: isFeatured,
           in_stock: inStock,
           category_id: resolvedCategoryId,
+          created_at: new Date(dateAdded).toISOString(),
         }),
       });
 
@@ -320,7 +347,8 @@ function EditProductModal({
       const saved = await res.json();
       onSaved({
         ...item,
-        secure_url: imageUrl,
+        secure_url: finalImages[0] || '',
+        images: finalImages,
         title: saved.name,
         description: saved.description,
         price: saved.price,
@@ -331,6 +359,7 @@ function EditProductModal({
         in_stock: saved.in_stock,
         category_id: saved.category_id,
         slug: saved.slug,
+        created_at: saved.created_at || item.created_at,
       });
       toast.success('Product updated!');
       onClose();
@@ -354,19 +383,27 @@ function EditProductModal({
         </div>
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Image</label>
-            <div className="flex gap-4 items-start">
-              <img src={newImagePreview || item.secure_url} alt="product"
-                className="w-24 h-24 object-cover rounded-xl border border-gray-200" />
-              <div>
-                <button type="button" onClick={() => fileRef.current?.click()}
-                  className="px-4 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors">
-                  Change Image
-                </button>
-                {newImageFile && <p className="text-xs text-gray-400 mt-1">{newImageFile.name}</p>}
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-              </div>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Images</label>
+            <div className="flex flex-wrap gap-3 mb-3">
+              {existingImages.map(url => (
+                <div key={url} className="relative">
+                  <img src={url} alt="product" className="w-20 h-20 object-cover rounded-xl border border-gray-200" />
+                  <button type="button" onClick={() => removeExistingImage(url)}
+                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600">
+                    ×
+                  </button>
+                </div>
+              ))}
+              {newImagePreviews.map((url, i) => (
+                <img key={i} src={url} alt="new" className="w-20 h-20 object-cover rounded-xl border border-primary-300" />
+              ))}
             </div>
+            <button type="button" onClick={() => fileRef.current?.click()}
+              className="px-4 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+              Add Images
+            </button>
+            {newImageFiles.length > 0 && <p className="text-xs text-gray-400 mt-1">{newImageFiles.length} new file(s) selected</p>}
+            <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -385,7 +422,7 @@ function EditProductModal({
               />
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Price (KES)</label>
               <input type="number" value={price} onChange={e => setPrice(e.target.value)}
@@ -395,6 +432,13 @@ function EditProductModal({
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Original Price (KES)</label>
               <input type="number" value={originalPrice} onChange={e => setOriginalPrice(e.target.value)}
                 placeholder="Optional — shows discount"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+                Date Added <span className="text-red-500">*</span>
+              </label>
+              <input type="date" required value={dateAdded} onChange={e => setDateAdded(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
           </div>
@@ -465,6 +509,7 @@ function ProductCard({
 }) {
   const [editing, setEditing] = useState(false);
   const cat = categories.find(c => c.id === item.category_id);
+  const imageCount = item.images?.length || (item.secure_url ? 1 : 0);
 
   return (
     <div className="bg-white rounded-2xl shadow overflow-hidden">
@@ -477,9 +522,19 @@ function ProductCard({
           onCategoryCreated={onCategoryCreated}
         />
       )}
-      <img src={item.secure_url} alt={item.title || 'product'} className="w-full h-48 object-cover" />
+      <div className="relative">
+        <img src={item.secure_url} alt={item.title || 'product'} className="w-full h-48 object-cover" />
+        {imageCount > 1 && (
+          <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+            {imageCount} photos
+          </span>
+        )}
+      </div>
       <div className="p-4">
-        {cat && <p className="text-xs text-primary-500 font-medium uppercase tracking-wide mb-1">{cat.name}</p>}
+        <div className="flex items-center justify-between mb-1">
+          {cat && <p className="text-xs text-primary-500 font-medium uppercase tracking-wide">{cat.name}</p>}
+          <p className="text-xs text-gray-400">{formatDate(item.created_at)}</p>
+        </div>
         <h3 className="font-semibold text-base leading-snug mb-1">{item.title || 'Untitled'}</h3>
         {item.description && (
           <p className="text-sm text-gray-500 mb-1 leading-relaxed line-clamp-2">{highlightDescription(item.description)}</p>
@@ -521,13 +576,14 @@ export default function AdminDashboard({ admin }: { admin: string }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [dateAdded, setDateAdded] = useState(todayISODate());
   const [uploading, setUploading] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const [fileName, setFileName] = useState('');
+  const [fileNames, setFileNames] = useState<string[]>([]);
   const router = useRouter();
 
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '';
@@ -580,6 +636,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
             id: p.id,
             public_id: p.images?.[0] || String(p.id),
             secure_url: p.images?.[0] || '',
+            images: p.images || [],
             title: p.name,
             description: p.description,
             price: p.price,
@@ -590,6 +647,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
             in_stock: p.in_stock,
             category_id: p.category_id,
             slug: p.slug,
+            created_at: p.created_at,
           })));
         }
       } catch { }
@@ -619,20 +677,28 @@ export default function AdminDashboard({ admin }: { admin: string }) {
 
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
-    const file = fileRef.current?.files?.[0];
-    if (!file) { toast.error('Select an image first'); return; }
+    const files = Array.from(fileRef.current?.files || []);
+    if (!files.length) { toast.error('Select at least one image'); return; }
     if (!title.trim()) { toast.error('Title is required'); return; }
+    if (!dateAdded) { toast.error('Date is required'); return; }
     if (categoryId === null && !newCategoryName.trim()) { toast.error('Select or enter a category'); return; }
 
     setUploading(true);
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('upload_preset', uploadPreset);
 
     try {
-      const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: fd });
-      const cloudData = await cloudRes.json();
-      if (cloudData.error) throw new Error(cloudData.error.message || 'Cloudinary upload failed');
+      // Upload every selected file to Cloudinary, collecting their secure URLs.
+      const uploadedUrls: string[] = [];
+      let firstPublicId = '';
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('upload_preset', uploadPreset);
+        const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: fd });
+        const cloudData = await cloudRes.json();
+        if (cloudData.error) throw new Error(cloudData.error.message || 'Cloudinary upload failed');
+        uploadedUrls.push(cloudData.secure_url);
+        if (!firstPublicId) firstPublicId = cloudData.public_id;
+      }
 
       let resolvedCategoryId = categoryId;
       if (resolvedCategoryId === null) {
@@ -651,10 +717,11 @@ export default function AdminDashboard({ admin }: { admin: string }) {
           description: description.trim() || null,
           price: price ? parseFloat(price) : 0,
           original_price: null,
-          images: [cloudData.secure_url],
+          images: uploadedUrls,
           dimensions: null, materials: null,
           is_featured: false, in_stock: true,
           category_id: resolvedCategoryId,
+          created_at: new Date(dateAdded).toISOString(),
         }),
       });
 
@@ -666,8 +733,9 @@ export default function AdminDashboard({ admin }: { admin: string }) {
       const saved = await backendRes.json();
       setImages(prev => [{
         id: saved.id,
-        public_id: cloudData.public_id,
-        secure_url: cloudData.secure_url,
+        public_id: firstPublicId,
+        secure_url: uploadedUrls[0] || '',
+        images: uploadedUrls,
         title: saved.name,
         description: saved.description,
         price: saved.price,
@@ -678,10 +746,12 @@ export default function AdminDashboard({ admin }: { admin: string }) {
         in_stock: saved.in_stock,
         category_id: saved.category_id,
         slug: saved.slug,
+        created_at: saved.created_at || new Date(dateAdded).toISOString(),
       }, ...prev]);
 
       toast.success('Product saved!');
-      setTitle(''); setDescription(''); setPrice(''); setFileName(''); setNewCategoryName('');
+      setTitle(''); setDescription(''); setPrice(''); setFileNames([]); setNewCategoryName('');
+      setDateAdded(todayISODate());
       if (fileRef.current) fileRef.current.value = '';
 
       const cat = categories.find(c => c.id === resolvedCategoryId);
@@ -735,7 +805,8 @@ export default function AdminDashboard({ admin }: { admin: string }) {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div className="flex flex-col gap-1">
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Product Image <span className="text-red-500">*</span>
+              Product Images <span className="text-red-500">*</span>
+              <span className="ml-1 font-normal normal-case text-gray-400">(one or more)</span>
             </label>
             <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary-400 transition-colors min-h-[100px]"
               onClick={() => fileRef.current?.click()}>
@@ -743,10 +814,15 @@ export default function AdminDashboard({ admin }: { admin: string }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                   d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="text-xs text-gray-400 text-center break-all">{fileName || 'Click to choose file'}</span>
+              <span className="text-xs text-gray-400 text-center break-all">
+                {fileNames.length > 0 ? `${fileNames.length} file(s) selected` : 'Click to choose file(s)'}
+              </span>
             </div>
-            <input ref={fileRef} type="file" accept="image/*" required className="hidden"
-              onChange={e => setFileName(e.target.files?.[0]?.name || '')} />
+            <input ref={fileRef} type="file" accept="image/*" multiple required className="hidden"
+              onChange={e => setFileNames(Array.from(e.target.files || []).map(f => f.name))} />
+            {fileNames.length > 0 && (
+              <p className="text-xs text-gray-400 mt-1 break-all">{fileNames.join(', ')}</p>
+            )}
           </div>
           <div className="flex flex-col gap-1">
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -773,7 +849,14 @@ export default function AdminDashboard({ admin }: { admin: string }) {
             <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g. 15000"
               className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
-          <div className="sm:col-span-3 flex flex-col gap-1">
+          <div className="flex flex-col gap-1">
+            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Date Added <span className="text-red-500">*</span>
+            </label>
+            <input type="date" required value={dateAdded} onChange={e => setDateAdded(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+          </div>
+          <div className="sm:col-span-2 flex flex-col gap-1">
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
               Description <span className="ml-2 font-normal normal-case text-gray-400 text-xs">— key terms highlighted automatically</span>
             </label>

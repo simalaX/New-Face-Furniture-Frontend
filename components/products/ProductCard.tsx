@@ -3,12 +3,19 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Heart, Eye } from 'lucide-react';
+import { ShoppingCart, Heart, Eye, Calendar } from 'lucide-react';
 import { Product } from '@/types';
 import { useCartStore } from '@/lib/store';
 import toast from 'react-hot-toast';
 
 interface Props { product: Product; }
+
+function formatDate(value?: string): string | null {
+  if (!value) return null;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('en-KE', { year: 'numeric', month: 'short', day: 'numeric' });
+}
 
 export default function ProductCard({ product }: Props) {
   const addItem = useCartStore(s => s.addItem);
@@ -24,6 +31,7 @@ export default function ProductCard({ product }: Props) {
   const discount = product.original_price
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : null;
+  const uploadedDate = formatDate((product as any).created_at);
 
   return (
     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
@@ -53,9 +61,16 @@ export default function ProductCard({ product }: Props) {
           </div>
         </div>
         <div className="p-4">
-          {product.category && (
-            <p className="text-xs text-secondary-500 font-medium uppercase tracking-wider mb-1">{product.category.name}</p>
-          )}
+          <div className="flex items-center justify-between mb-1">
+            {product.category && (
+              <p className="text-xs text-secondary-500 font-medium uppercase tracking-wider">{product.category.name}</p>
+            )}
+            {uploadedDate && (
+              <p className="flex items-center gap-1 text-xs text-gray-400">
+                <Calendar size={11} /> {uploadedDate}
+              </p>
+            )}
+          </div>
           <h3 className="font-serif font-semibold text-dark text-base mb-2 line-clamp-2">{product.name}</h3>
           <div className="flex items-center justify-between">
             <div>
