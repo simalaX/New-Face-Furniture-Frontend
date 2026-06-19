@@ -16,7 +16,7 @@ const schema = z.object({
 });
 type FormData = z.infer<typeof schema>;
 
-const BUSINESS_EMAIL = 'newfacefurniture@gmail.com';
+const BUSINESS_EMAIL = 'info@newfacefurniture.co.ke';
 const WHATSAPP_NUMBER = '254115990547';
 
 // 'form' → fill in details
@@ -97,7 +97,7 @@ export default function ContactPage() {
                 { icon: MapPin, title: 'Location', content: 'Desai Road, Ngara, Nairobi, Kenya', link: null },
                 { icon: Phone, title: 'Phone', content: '+254 115 990 547', link: 'tel:+254115990547' },
                 { icon: Instagram, title: 'Instagram', content: '@new_face_furniture', link: 'https://instagram.com/new_face_furniture' },
-                { icon: Clock, title: 'Business Hours', content: 'Mon–Sat: 8AM–7PM | Sun: 10AM–4PM', link: null },
+                { icon: Clock, title: 'Business Hours', content: 'Mon–Sat: 8AM–7PM', link: null },
               ].map(({ icon: Icon, title, content, link }) => (
                 <div key={title} className="flex gap-4">
                   <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -122,7 +122,7 @@ export default function ContactPage() {
               <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
                 <svg viewBox="0 0 24 24" fill="white" width="22" height="22">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-                  <path d="M12 0C5.373 0 0 5.373 0 12c0 2.122.555 4.112 1.524 5.84L0 24l6.337-1.507A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 01-5.031-1.384l-.36-.214-3.762.895.944-3.666-.235-.375A9.817 9.817 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z" />
+                  <path d="M12 0C5.373 0 0 5.373 0 12c0 2.136.563 4.14 1.545 5.876L.057 23.272a.75.75 0 00.92.92l5.396-1.488A11.953 11.953 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.667-.5-5.207-1.377l-.374-.217-3.876 1.069 1.069-3.876-.217-.374A9.953 9.953 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
                 </svg>
               </div>
               <div>
