@@ -19,7 +19,7 @@ const schema = z.object({
   town: z.string().min(2, 'Enter your town'),
   address: z.string().min(5, 'Enter your delivery address'),
   notes: z.string().optional(),
-  payment_method: z.enum(['mpesa', 'cash', 'bank']),
+  payment_method: z.literal('mpesa'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -101,12 +101,10 @@ export default function CheckoutPage() {
   const [done, setDone] = useState(false);
   const [orderNum, setOrderNum] = useState('');
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { payment_method: 'mpesa' },
   });
-
-  const selectedPayment = watch('payment_method');
 
   if (items.length === 0 && !done) {
     return (
@@ -238,29 +236,16 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Payment */}
+              {/* Payment — M-Pesa only */}
               <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <h3 className="font-serif text-xl font-bold text-dark mb-5">Payment Method</h3>
-                <div className="grid sm:grid-cols-3 gap-3">
-                  {[
-                    { value: 'mpesa', label: 'M-Pesa', desc: 'Pay via M-Pesa' },
-                    { value: 'bank', label: 'Bank Transfer', desc: 'Pay via bank' },
-                    { value: 'cash', label: 'Cash on Delivery', desc: 'Pay at delivery' },
-                  ].map(m => (
-                    <label key={m.value} className="relative cursor-pointer">
-                      <input type="radio" value={m.value} {...register('payment_method')} className="peer sr-only" />
-                      <div className="border-2 border-gray-100 peer-checked:border-primary-500 peer-checked:bg-primary-50 rounded-xl p-4 transition-all">
-                        <p className="font-medium text-dark text-sm">{m.label}</p>
-                        <p className="text-gray-400 text-xs mt-1">{m.desc}</p>
-                      </div>
-                    </label>
-                  ))}
+                <input type="hidden" value="mpesa" {...register('payment_method')} />
+                <div className="border-2 border-primary-500 bg-primary-50 rounded-xl p-4 inline-flex flex-col">
+                  <p className="font-medium text-dark text-sm">M-Pesa</p>
+                  <p className="text-gray-400 text-xs mt-1">Pay via M-Pesa</p>
                 </div>
 
-                {/* M-Pesa instructions — only shown when M-Pesa is selected */}
-                {selectedPayment === 'mpesa' && (
-                  <MpesaInstructions total={total()} />
-                )}
+                <MpesaInstructions total={total()} />
               </div>
             </div>
 
