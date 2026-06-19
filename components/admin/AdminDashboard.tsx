@@ -652,14 +652,14 @@ export default function AdminDashboard({ admin }: { admin: string }) {
     setCategories(prev => (prev.some(c => c.id === category.id) ? prev : [...prev, category]));
   }
 
-  // ── FIX: store File objects + generate previews ────────────────────────────
+  // ── FIX: append newly chosen files instead of replacing the selection ──────
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    setSelectedFiles(files);
-    // revoke old previews to avoid memory leaks
-    selectedPreviews.forEach(url => URL.revokeObjectURL(url));
-    setSelectedPreviews(files.map(f => URL.createObjectURL(f)));
+    setSelectedFiles(prev => [...prev, ...files]);
+    setSelectedPreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))]);
+    // reset the input value so selecting the same file again still fires onChange
+    if (fileRef.current) fileRef.current.value = '';
   }
 
   function removeSelectedFile(index: number) {
@@ -847,7 +847,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
                 </svg>
                 <span className="text-xs text-gray-400 text-center">
                   {selectedFiles.length > 0
-                    ? `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected — click to change`
+                    ? `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected — click to add more`
                     : 'Click to choose files'}
                 </span>
               </div>
