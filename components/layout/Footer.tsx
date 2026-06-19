@@ -83,7 +83,7 @@ export default function Footer() {
                 <Clock size={18} className="text-secondary-400 flex-shrink-0 mt-0.5" />
                 <div className="text-gray-400 text-sm">
                   <p>Mon–Sat: 8AM – 7PM</p>
-                  <p>Sunday: 10AM – 4PM</p>
+                  
                 </div>
               </div>
             </div>
@@ -93,7 +93,7 @@ export default function Footer() {
 
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-gray-500 text-sm">© 2025 New Face Furniture Kenya. All Rights Reserved.</p>
+          <p className="text-gray-500 text-sm">© 2026 New Face Furniture Kenya. All Rights Reserved.</p>
           <p className="text-gray-600 text-xs">Desai Road, Ngara, Nairobi</p>
         </div>
       </div>
