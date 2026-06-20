@@ -100,7 +100,7 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-serif text-3xl font-bold text-dark mb-4">Visit Our Showroom</h2>
           <p className="text-gray-500 mb-2">Desai Road, Ngara, Nairobi, Kenya</p>
-          <p className="text-gray-500 mb-2">Mon–Sat: 8AM – 7PM | Sunday: 10AM – 4PM</p>
+          <p className="text-gray-500 mb-2">Mon–Sat: 8AM – 7PM </p>
           <p className="text-gray-500">Call us: <a href="tel:+254115990547" className="text-primary-500 font-medium">+254 115 990 547</a></p>
         </div>
       </section>
