@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     default: 'New Face Furniture Kenya | #1 Custom Furniture Makers in Nairobi',
     template: '%s | New Face Furniture Kenya',
   },
-  description: "🛋️ Kenya's most trusted furniture makers. Custom sofas, beds, dining sets, coffee tables, wardrobes & office furniture. Handcrafted in Nairobi, delivered countrywide in 5 days. Order now & transform your space!",
+  description: "Bespoke furniture, handcrafted in Nairobi. New Face Furniture creates custom sofas, beds, dining sets & more — quality craftsmanship, countrywide delivery.",
   keywords: [
     'New Face Furniture',
     'New Face Furniture Kenya',
@@ -60,8 +60,8 @@ export const metadata: Metadata = {
     shortcut: '/logo.png',
   },
   openGraph: {
-    title: 'New Face Furniture Kenya | #1 Custom Furniture Makers — Delivered Countrywide',
-    description: "Kenya's most trusted furniture makers 🇰🇪 Custom sofas, beds, dining sets, coffee tables & more. Handcrafted in Nairobi with quality materials. 500+ happy customers. 5-day delivery countrywide. Get your free quote today!",
+    title: 'New Face Furniture Kenya | Bespoke Furniture, Handcrafted in Nairobi',
+    description: "Elevated, made-to-order furniture for discerning homes. Custom sofas, beds, dining sets, coffee tables & more — crafted with quality materials and delivered countrywide. Request your bespoke quote today.",
     url: 'https://newfacefurniture.co.ke',
     siteName: 'New Face Furniture Kenya',
     locale: 'en_KE',
@@ -77,8 +77,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'New Face Furniture Kenya | #1 Custom Furniture Makers',
-    description: '🛋️ Custom sofas, beds, dining sets & more. Handcrafted in Nairobi. Delivered countrywide in 5 days. 500+ happy customers!',
+    title: 'New Face Furniture Kenya | Bespoke Furniture, Handcrafted in Nairobi',
+    description: 'Custom sofas, beds, dining sets & more — handcrafted in Nairobi with quality materials, delivered countrywide.',
     images: ['/og-image.jpg'],
   },
   robots: {
@@ -110,7 +110,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               '@type': 'FurnitureStore',
               name: 'New Face Furniture Kenya',
               alternateName: 'New Face Furniture',
-              description: "Kenya's most trusted custom furniture makers. Sofas, beds, dining sets, coffee tables, wardrobes, TV stands and office furniture. Handcrafted in Nairobi, delivered countrywide in 5 days.",
+              description: "Bespoke furniture, handcrafted in Nairobi. New Face Furniture creates custom sofas, beds, dining sets, coffee tables, wardrobes and office furniture with quality materials, delivered countrywide.",
               url: 'https://newfacefurniture.co.ke',
               logo: 'https://newfacefurniture.co.ke/logo.png',
               image: 'https://newfacefurniture.co.ke/og-image.jpg',
