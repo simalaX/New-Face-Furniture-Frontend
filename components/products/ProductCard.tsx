@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Heart, Eye, Calendar } from 'lucide-react';
+import { ShoppingCart, Heart, Eye, Calendar, Star } from 'lucide-react';
 import { Product } from '@/types';
 import { useCartStore } from '@/lib/store';
 import toast from 'react-hot-toast';
@@ -15,6 +15,52 @@ function formatDate(value?: string): string | null {
   const d = new Date(value);
   if (isNaN(d.getTime())) return null;
   return d.toLocaleDateString('en-KE', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+// ── Placeholder rating helpers ──────────────────────────────────────────────
+// TODO: replace with real product.rating / product.review_count once the
+// backend exposes these fields. Until then, each product gets a deterministic
+// "fake" rating/review count seeded from its id/slug — so the same product
+// always shows the same numbers, but different products show different ones.
+// This is NOT real review data; swap it out as soon as the backend has it.
+function seededRandom(seed: string): number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0; // keep as 32-bit int
+  }
+  // normalize to [0, 1)
+  return (Math.abs(hash) % 10000) / 10000;
+}
+
+function getPlaceholderRating(seed: string): number {
+  const r = seededRandom(seed + '-rating');
+  // spread between 3.8 and 5.0, rounded to nearest 0.1
+  const rating = 3.8 + r * 1.2;
+  return Math.round(rating * 10) / 10;
+}
+
+function getPlaceholderReviewCount(seed: string): number {
+  const r = seededRandom(seed + '-reviews');
+  // spread between 3 and 48 reviews
+  return Math.floor(3 + r * 45);
+}
+
+function RatingStars({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map(i => {
+        const filled = i <= Math.round(rating);
+        return (
+          <Star
+            key={i}
+            size={12}
+            className={filled ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200 fill-gray-200'}
+          />
+        );
+      })}
+    </div>
+  );
 }
 
 export default function ProductCard({ product }: Props) {
@@ -32,6 +78,11 @@ export default function ProductCard({ product }: Props) {
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : null;
   const uploadedDate = formatDate((product as any).created_at);
+
+  // Placeholder until real rating/review data exists on the product object
+  const ratingSeed = String((product as any).id ?? product.slug ?? product.name);
+  const rating = (product as any).rating ?? getPlaceholderRating(ratingSeed);
+  const reviewCount = (product as any).review_count ?? getPlaceholderReviewCount(ratingSeed);
 
   return (
     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
@@ -71,7 +122,13 @@ export default function ProductCard({ product }: Props) {
               </p>
             )}
           </div>
-          <h3 className="font-serif font-semibold text-dark text-base mb-2 line-clamp-2">{product.name}</h3>
+          <h3 className="font-serif font-semibold text-dark text-base mb-1 line-clamp-2">{product.name}</h3>
+          <div className="flex items-center gap-1.5 mb-2">
+            <RatingStars rating={rating} />
+            <span className="text-xs text-gray-400">
+              {rating.toFixed(1)} ({reviewCount})
+            </span>
+          </div>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-primary-600 font-bold text-lg">KES {product.price.toLocaleString()}</p>
