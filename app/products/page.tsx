@@ -189,12 +189,24 @@ function ProductsContent() {
               </div>
             ) : filtered.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-2xl">
-                <h3 className="font-serif text-xl font-bold text-dark mb-2">{products.length === 0 ? 'Products Coming Soon' : 'No products found'}</h3>
-                <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">{products.length === 0 ? "We're adding our collection. Contact us on WhatsApp to see what's available now." : 'Try a different category or price range.'}</p>
                 {products.length === 0 ? (
-                  <a href="https://wa.me/254115990547?text=Hi, I'd like to see your furniture collection" target="_blank" rel="noreferrer" className="btn-primary inline-flex">Chat on WhatsApp</a>
+                  <>
+                    <h3 className="font-serif text-xl font-bold text-dark mb-2">Products Coming Soon</h3>
+                    <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">We're adding our collection. Chat with us on WhatsApp to see what's available now.</p>
+                    <a href="https://wa.me/254115990547?text=Hi, I'd like to see your furniture collection" target="_blank" rel="noreferrer" className="btn-primary inline-flex">Chat on WhatsApp</a>
+                  </>
+                ) : selectedCat !== 'all' ? (
+                  <>
+                    <h3 className="font-serif text-xl font-bold text-dark mb-2">{currentCatName} is being handcrafted</h3>
+                    <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">New pieces are on the way — let us know you're interested.</p>
+                    <a href={`https://wa.me/254115990547?text=${encodeURIComponent(`Hi, I'd like to know when ${currentCatName} pieces will be available`)}`} target="_blank" rel="noreferrer" className="btn-primary inline-flex">Notify Me on WhatsApp</a>
+                  </>
                 ) : (
-                  <button onClick={clearAll} className="btn-outline">Clear filters</button>
+                  <>
+                    <h3 className="font-serif text-xl font-bold text-dark mb-2">No products match these filters</h3>
+                    <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">Try a different price range or sort option.</p>
+                    <button onClick={clearAll} className="btn-outline">Clear filters</button>
+                  </>
                 )}
               </div>
             ) : (
