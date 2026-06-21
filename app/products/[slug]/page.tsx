@@ -4,11 +4,55 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ShoppingCart, ArrowLeft, Ruler, Package, CheckCircle, MessageCircle, Minus, Plus } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Ruler, Package, CheckCircle, MessageCircle, Minus, Plus, Star } from 'lucide-react';
 import { productsApi } from '@/lib/api';
 import { Product } from '@/types';
 import { useCartStore } from '@/lib/store';
+import ProductCard from '@/components/products/ProductCard';
 import toast from 'react-hot-toast';
+
+// ── Placeholder rating helpers (mirrors components/products/ProductCard.tsx) ─
+// TODO: replace with real product.rating / product.review_count once the
+// backend exposes these fields. Until then, each product gets a deterministic
+// "fake" rating/review count seeded from its id/slug — so the same product
+// always shows the same numbers everywhere (card grid + detail page), but
+// different products show different ones. This is NOT real review data.
+function seededRandom(seed: string): number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0; // keep as 32-bit int
+  }
+  return (Math.abs(hash) % 10000) / 10000;
+}
+
+function getPlaceholderRating(seed: string): number {
+  const r = seededRandom(seed + '-rating');
+  const rating = 3.8 + r * 1.2; // spread between 3.8 and 5.0
+  return Math.round(rating * 10) / 10;
+}
+
+function getPlaceholderReviewCount(seed: string): number {
+  const r = seededRandom(seed + '-reviews');
+  return Math.floor(3 + r * 45); // spread between 3 and 48 reviews
+}
+
+function RatingStars({ rating, size = 16 }: { rating: number; size?: number }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map(i => {
+        const filled = i <= Math.round(rating);
+        return (
+          <Star
+            key={i}
+            size={size}
+            className={filled ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200 fill-gray-200'}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -17,6 +61,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [relatedLoading, setRelatedLoading] = useState(true);
   const addItem = useCartStore(s => s.addItem);
 
   useEffect(() => {
@@ -28,6 +74,23 @@ export default function ProductDetailPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  // ── Fetch related products: same category, excluding current product ──────
+  useEffect(() => {
+    if (!product) return;
+    setRelatedLoading(true);
+    productsApi.getAll({ limit: 50 })
+      .then(all => {
+        if (!all?.length) { setRelatedProducts([]); return; }
+        const related = all
+          .filter((p: Product) => p.id !== product.id)
+          .filter((p: Product) => product.category ? p.category?.slug === product.category.slug : true)
+          .slice(0, 4);
+        setRelatedProducts(related);
+      })
+      .catch(() => setRelatedProducts([]))
+      .finally(() => setRelatedLoading(false));
+  }, [product]);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
   if (!product) return <div className="min-h-screen flex items-center justify-center">Product not found</div>;
 
@@ -38,6 +101,11 @@ export default function ProductDetailPage() {
 
   const whatsappMsg = encodeURIComponent(`Hello New Face Furniture, I'm interested in: ${product.name} (KES ${product.price?.toLocaleString()}). Please share more details.`);
   const imgs = product.images?.length ? product.images : [];
+
+  // Placeholder until real rating/review data exists on the product object
+  const ratingSeed = String((product as any).id ?? product.slug ?? product.name);
+  const rating = (product as any).rating ?? getPlaceholderRating(ratingSeed);
+  const reviewCount = (product as any).review_count ?? getPlaceholderReviewCount(ratingSeed);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -92,7 +160,14 @@ export default function ProductDetailPage() {
                 {product.category.name}
               </Link>
             )}
-            <h1 className="font-serif text-3xl md:text-4xl font-bold text-dark mb-4">{product.name}</h1>
+            <h1 className="font-serif text-3xl md:text-4xl font-bold text-dark mb-3">{product.name}</h1>
+
+            <div className="flex items-center gap-2 mb-4">
+              <RatingStars rating={rating} />
+              <span className="text-sm text-gray-500">
+                {rating.toFixed(1)} &middot; {reviewCount} review{reviewCount !== 1 ? 's' : ''}
+              </span>
+            </div>
 
             <div className="flex items-baseline gap-4 mb-6">
               <span className="text-3xl font-bold text-primary-500">KES {product.price.toLocaleString()}</span>
@@ -173,6 +248,32 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Rating summary stat boxes */}
+        <div className="grid grid-cols-2 gap-4 max-w-md mt-12 mb-4">
+          <div className="bg-white rounded-2xl p-5 text-center shadow-sm">
+            <p className="font-serif text-3xl font-bold text-dark">{rating.toFixed(1)}</p>
+            <p className="text-xs text-gray-400 uppercase tracking-wide mt-1">Rating</p>
+          </div>
+          <div className="bg-white rounded-2xl p-5 text-center shadow-sm">
+            <p className="font-serif text-3xl font-bold text-dark">{reviewCount}</p>
+            <p className="text-xs text-gray-400 uppercase tracking-wide mt-1">Review{reviewCount !== 1 ? 's' : ''}</p>
+          </div>
+        </div>
+
+        {/* Related Products */}
+        {!relatedLoading && relatedProducts.length > 0 && (
+          <div className="mt-16">
+            <h2 className="font-serif text-2xl md:text-3xl font-bold text-dark mb-6">Related Products</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+              {relatedProducts.map((p, i) => (
+                <motion.div key={p.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                  <ProductCard product={p} />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
