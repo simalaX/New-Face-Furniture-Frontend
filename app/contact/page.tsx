@@ -61,10 +61,18 @@ export default function ContactPage() {
   }
 
   const onSubmit = async (data: FormData) => {
+    // Fire-and-forget: never let a slow/unreachable backend block the UI.
+    // We race the API call against a short timeout so "Preparing..." can't hang forever.
+    const withTimeout = (p: Promise<unknown>, ms: number) =>
+      Promise.race([
+        p,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+      ]);
+
     try {
-      await contactApi.send(data);
+      await withTimeout(contactApi.send(data), 5000);
     } catch {
-      // non-blocking — still show send options
+      // non-blocking — backend may be slow/down/cold-starting; still let the user send via WA/Email
     }
     setSubmittedData(data);
     setStep('choose');
