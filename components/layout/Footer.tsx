@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { MapPin, Phone, Instagram, Clock, ArrowRight } from 'lucide-react';
+import { MapPin, Phone, Mail, Instagram, Clock, ArrowRight } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -10,7 +10,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3 mb-5">
-              <img src="/logo.png" alt="New Face Furniture" onError={(e:any) => { e.currentTarget.onerror = null; e.currentTarget.src = '/logo.svg'; }} className="w-12 h-12 rounded-full object-cover border border-white/20" />
+              <img src="/logo.png" alt="New Face Furniture" onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = '/logo.svg'; }} className="w-12 h-12 rounded-full object-cover border border-white/20" />
               <div>
                 <p className="font-serif font-bold text-white text-lg leading-none">New Face</p>
                 <p className="text-xs text-secondary-400 font-medium tracking-wide">FURNITURE</p>
@@ -75,6 +75,10 @@ export default function Footer() {
                 <a href="tel:+254115990547" className="text-gray-400 hover:text-white text-sm transition-colors">+254 115 990 547</a>
               </div>
               <div className="flex gap-3">
+                <Mail size={18} className="text-secondary-400 flex-shrink-0" />
+                <p className="text-gray-400 text-sm">info@newfacefurniture.co.ke</p>
+              </div>
+              <div className="flex gap-3">
                 <Instagram size={18} className="text-secondary-400 flex-shrink-0" />
                 <a href="https://instagram.com/new_face_furniture" target="_blank" rel="noreferrer"
                   className="text-gray-400 hover:text-white text-sm transition-colors">@new_face_furniture</a>
@@ -83,7 +87,7 @@ export default function Footer() {
                 <Clock size={18} className="text-secondary-400 flex-shrink-0 mt-0.5" />
                 <div className="text-gray-400 text-sm">
                   <p>Mon–Sat: 8AM – 7PM</p>
-                  
+
                 </div>
               </div>
             </div>
