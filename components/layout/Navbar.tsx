@@ -107,6 +107,18 @@ export default function Navbar() {
                     <Link href="/about" className="flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-gray-50">
                       <Info size={16} className="text-gray-400" /> <span>About Us</span>
                     </Link>
+                    <Link href="/custom-order" className="flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-gray-50">
+                      <Ruler size={16} className="text-gray-400" /> <span>Custom Orders</span>
+                    </Link>
+                    <Link href="/testimonials" className="flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-gray-50">
+                      <Star size={16} className="text-gray-400" /> <span>Reviews</span>
+                    </Link>
+                    <Link href="/faq" className="flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-gray-50">
+                      <HelpCircle size={16} className="text-gray-400" /> <span>FAQ</span>
+                    </Link>
+                    <Link href="/contact" className="flex items-center gap-3 p-3 rounded-xl text-gray-700 hover:bg-gray-50">
+                      <Phone size={16} className="text-gray-400" /> <span>Contact</span>
+                    </Link>
                   </div>
                 </div>
 
