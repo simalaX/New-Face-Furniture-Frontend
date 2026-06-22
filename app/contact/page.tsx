@@ -16,7 +16,7 @@ const schema = z.object({
 });
 type FormData = z.infer<typeof schema>;
 
-const BUSINESS_EMAIL = 'info@newfacefurniture.co.ke';
+const BUSINESS_EMAIL = 'infonewfacefurniture@gmail.com';
 const WHATSAPP_NUMBER = '254115990547';
 
 // 'form' → fill in details

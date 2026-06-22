@@ -23,7 +23,7 @@ type FormData = z.infer<typeof schema>;
 const materialOptions = ['Mahogany', 'Oak', 'Pine', 'MDF', 'Plywood', 'Metal', 'Glass', 'Leather', 'Fabric', 'Rattan', 'Other'];
 const furnitureTypes = ['Sofa / Couch', 'Bed / Headboard', 'Dining Table', 'Coffee Table', 'Wardrobe', 'TV Stand', 'Office Desk', 'Bookshelf', 'Kitchen Cabinet', 'Other'];
 
-const BUSINESS_EMAIL = 'newfacefurniture@gmail.com';
+const BUSINESS_EMAIL = 'infonewfacefurniture@gmail.com';
 const WHATSAPP_NUMBER = '254115990547';
 
 // 'form' → fill in details
