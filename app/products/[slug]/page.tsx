@@ -265,7 +265,7 @@ export default function ProductDetailPage() {
         {!relatedLoading && relatedProducts.length > 0 && (
           <div className="mt-16">
             <h2 className="font-serif text-2xl md:text-3xl font-bold text-dark mb-6">Related Products</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-6">
               {relatedProducts.map((p, i) => (
                 <motion.div key={p.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                   <ProductCard product={p} />

@@ -184,7 +184,7 @@ function ProductsContent() {
               <p className="text-gray-500 text-sm">{filtered.length} product{filtered.length !== 1 ? 's' : ''} found</p>
             </div>
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6">
                 {[...Array(6)].map((_, i) => <div key={i} className="bg-white rounded-2xl h-72 animate-pulse" />)}
               </div>
             ) : filtered.length === 0 ? (
@@ -210,7 +210,7 @@ function ProductsContent() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6">
                 {filtered.map((p, i) => (
                   <motion.div key={p.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                     <ProductCard product={p} />
