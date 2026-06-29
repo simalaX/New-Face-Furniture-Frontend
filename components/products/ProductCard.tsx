@@ -76,10 +76,10 @@ export default function ProductCard({ product }: Props) {
 
   return (
     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
-      <Link href={`/products/${product.slug}`} className="card block group">
+      <Link href={`/products/${product.slug}`} className="card block group overflow-hidden">
 
         {/* ── Image ── */}
-        <div className="relative overflow-hidden bg-accent" style={{ aspectRatio: '3/2' }}>
+        <div className="relative overflow-hidden bg-accent" style={{ aspectRatio: '1/1' }}>
           <Image
             src={img}
             alt={product.name}
@@ -87,7 +87,7 @@ export default function ProductCard({ product }: Props) {
             className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
           {discount && (
-            <span className="absolute top-2 left-2 bg-terracotta text-white text-xs font-bold px-1.5 py-0.5 rounded-md">
+            <span className="absolute top-1.5 right-1.5 sm:top-2 sm:left-2 sm:right-auto bg-orange-100 text-terracotta sm:bg-terracotta sm:text-white text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded-md">
               -{discount}%
             </span>
           )}
@@ -96,7 +96,8 @@ export default function ProductCard({ product }: Props) {
               <span className="bg-white text-dark text-xs font-semibold px-3 py-1.5 rounded-lg">Out of Stock</span>
             </div>
           )}
-          <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          {/* Hover icons: desktop only, hidden on touch/mobile */}
+          <div className="hidden sm:flex absolute top-2 right-2 flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <button className="w-7 h-7 bg-white rounded-lg flex items-center justify-center shadow-sm hover:bg-primary-50 transition-colors">
               <Heart size={12} className="text-gray-600" />
             </button>
@@ -110,8 +111,8 @@ export default function ProductCard({ product }: Props) {
         </div>
 
         {/* ── Info ── */}
-        <div className="p-2.5 sm:p-4">
-          <div className="flex items-center justify-between mb-0.5">
+        <div className="p-2 sm:p-4">
+          <div className="hidden sm:flex items-center justify-between mb-0.5">
             {product.category && (
               <p className="text-xs text-secondary-500 font-medium uppercase tracking-wider truncate max-w-[60%]">
                 {product.category.name}
@@ -124,11 +125,11 @@ export default function ProductCard({ product }: Props) {
             )}
           </div>
 
-          <h3 className="font-serif font-semibold text-dark text-sm sm:text-base mb-1 line-clamp-1">
+          <h3 className="font-serif font-semibold text-dark text-xs sm:text-base mb-1 line-clamp-2 sm:line-clamp-1 leading-snug">
             {product.name}
           </h3>
 
-          <div className="flex items-center gap-1 mb-1.5">
+          <div className="hidden sm:flex items-center gap-1 mb-1.5">
             <RatingStars rating={rating} />
             <span className="text-xs text-gray-400">
               {rating.toFixed(1)} ({reviewCount})
@@ -141,7 +142,7 @@ export default function ProductCard({ product }: Props) {
                 KES {product.price.toLocaleString()}
               </p>
               {product.original_price && (
-                <p className="text-gray-400 text-xs line-through">
+                <p className="text-gray-400 text-[10px] sm:text-xs line-through">
                   KES {product.original_price.toLocaleString()}
                 </p>
               )}
@@ -150,7 +151,7 @@ export default function ProductCard({ product }: Props) {
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={handleAddToCart}
-                className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-500 hover:bg-primary-600 text-white rounded-xl flex items-center justify-center transition-colors shadow-sm">
+                className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 bg-primary-500 hover:bg-primary-600 text-white rounded-xl items-center justify-center transition-colors shadow-sm">
                 <ShoppingCart size={14} />
               </motion.button>
             )}
