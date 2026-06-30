@@ -13,7 +13,7 @@ export default function FeaturedProducts() {
   useEffect(() => {
     productsApi.getAll({ featured: true, limit: 8 })
       .then(data => { if (data?.length) setProducts(data); })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return (
@@ -28,7 +28,7 @@ export default function FeaturedProducts() {
             View All <ArrowRight size={18} />
           </Link>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {products.map((product, i) => (
             <motion.div key={product.id}
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
