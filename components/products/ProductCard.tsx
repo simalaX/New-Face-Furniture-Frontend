@@ -129,9 +129,9 @@ export default function ProductCard({ product }: Props) {
             {product.name}
           </h3>
 
-          <div className="hidden sm:flex items-center gap-1 mb-1.5">
+          <div className="flex items-center gap-1 mb-1.5">
             <RatingStars rating={rating} />
-            <span className="text-xs text-gray-400">
+            <span className="text-[10px] sm:text-xs text-gray-400">
               {rating.toFixed(1)} ({reviewCount})
             </span>
           </div>
