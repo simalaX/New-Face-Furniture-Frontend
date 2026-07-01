@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -65,8 +65,6 @@ function RoomPlanner({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const roomUploadRef = useRef<HTMLInputElement>(null);
-
-  const { useRef } = require('react');
 
   if (!isOpen) return null;
 
@@ -155,8 +153,7 @@ function RoomPlanner({
       .map(item => `• ${item.productName} (KES ${products.find(p => p.id === item.productId)?.price.toLocaleString() || 'N/A'})`)
       .join('%0A');
     const message = `Hi! I'd like to discuss this room design:%0A%0A${itemsList}%0A%0ACan you help me with this?`;
-    const whatsappUrl = `https://wa.me/254115990547?text=${message}`;
-    window.open(whatsappUrl, '_blank');
+    window.open(`https://wa.me/254115990547?text=${message}`, '_blank');
   }
 
   return (
@@ -222,7 +219,9 @@ function RoomPlanner({
                       <div
                         key={item.id}
                         onClick={() => setSelectedItemId(item.id)}
-                        className={`p-2 rounded-lg cursor-pointer text-xs transition-all ${selectedItemId === item.id ? 'bg-primary-100 border border-primary-300' : 'bg-white border border-gray-200 hover:border-gray-300'
+                        className={`p-2 rounded-lg cursor-pointer text-xs transition-all ${selectedItemId === item.id
+                            ? 'bg-primary-100 border border-primary-300'
+                            : 'bg-white border border-gray-200 hover:border-gray-300'
                           }`}
                       >
                         <div className="flex items-center gap-2">
@@ -251,9 +250,7 @@ function RoomPlanner({
                     <div>
                       <label className="text-xs font-medium text-gray-600">Size</label>
                       <input
-                        type="range"
-                        min="50"
-                        max="250"
+                        type="range" min="50" max="250"
                         value={placedItems.find(i => i.id === selectedItemId)?.width || 120}
                         onChange={(e) => updateItem(selectedItemId, { width: Number(e.target.value), height: Number(e.target.value) })}
                         className="w-full"
@@ -262,9 +259,7 @@ function RoomPlanner({
                     <div>
                       <label className="text-xs font-medium text-gray-600">Rotation</label>
                       <input
-                        type="range"
-                        min="0"
-                        max="360"
+                        type="range" min="0" max="360"
                         value={placedItems.find(i => i.id === selectedItemId)?.rotation || 0}
                         onChange={(e) => updateItem(selectedItemId, { rotation: Number(e.target.value) })}
                         className="w-full"
@@ -301,7 +296,9 @@ function RoomPlanner({
                     <div
                       key={item.id}
                       onMouseDown={(e) => handleMouseDown(e, item.id)}
-                      className={`absolute transition-all ${selectedItemId === item.id ? 'ring-2 ring-primary-400 shadow-lg' : 'hover:ring-1 hover:ring-gray-400'
+                      className={`absolute transition-all ${selectedItemId === item.id
+                          ? 'ring-2 ring-primary-400 shadow-lg'
+                          : 'hover:ring-1 hover:ring-gray-400'
                         }`}
                       style={{
                         left: `${item.x}px`,
@@ -368,8 +365,6 @@ function RoomPlanner({
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
-  const { useRef } = require('react');
-
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -380,40 +375,22 @@ export default function ProductsPage() {
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://new-face-backend-ba3q.onrender.com';
 
-  // Load categories
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const res = await fetch(`${backendUrl}/api/v1/categories/`);
-        const cats: Category[] = await res.json();
-        setCategories(cats);
-      } catch (err) {
-        console.error('Failed to load categories:', err);
-      }
-    };
-    loadCategories();
+    fetch(`${backendUrl}/api/v1/categories/`)
+      .then(r => r.json())
+      .then((cats: Category[]) => setCategories(cats))
+      .catch(err => console.error('Failed to load categories:', err));
   }, []);
 
-  // Load products
   useEffect(() => {
-    const loadProducts = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`${backendUrl}/api/v1/products/?limit=100`);
-        if (!res.ok) throw new Error('Failed to fetch products');
-        const data: Product[] = await res.json();
-        setProducts(data);
-      } catch (err) {
-        console.error('Failed to load products:', err);
-        toast.error('Could not load products');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadProducts();
+    setLoading(true);
+    fetch(`${backendUrl}/api/v1/products/?limit=100`)
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then((data: Product[]) => setProducts(data))
+      .catch(() => toast.error('Could not load products'))
+      .finally(() => setLoading(false));
   }, []);
 
-  // Handle category filter from URL
   useEffect(() => {
     const categorySlug = searchParams.get('category');
     if (categorySlug) {
@@ -422,22 +399,13 @@ export default function ProductsPage() {
     }
   }, [searchParams, categories]);
 
-  // Filter products
   useEffect(() => {
     let filtered = products;
-
-    if (selectedCategory) {
-      filtered = filtered.filter(p => String(p.category_id) === selectedCategory);
-    }
-
+    if (selectedCategory) filtered = filtered.filter(p => String(p.category_id) === selectedCategory);
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(query) ||
-        p.description?.toLowerCase().includes(query)
-      );
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q));
     }
-
     setFilteredProducts(filtered);
   }, [selectedCategory, searchQuery, products]);
 
@@ -482,13 +450,10 @@ export default function ProductsPage() {
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setSelectedCategory(null)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedCategory === null
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedCategory === null ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               All Categories
@@ -497,9 +462,7 @@ export default function ProductsPage() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(String(cat.id))}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedCategory === String(cat.id)
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedCategory === String(cat.id) ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 {cat.name}
@@ -517,7 +480,7 @@ export default function ProductsPage() {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
               <p className="mt-4 text-gray-500">Loading products...</p>
             </div>
           </div>
@@ -536,29 +499,17 @@ export default function ProductsPage() {
               const discount = product.original_price
                 ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
                 : 0;
-
               return (
-                <div
-                  key={product.id}
-                  className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group cursor-pointer"
-                >
+                <div key={product.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group cursor-pointer">
                   <div className="relative w-full h-64 bg-gray-200 overflow-hidden">
                     {imageUrl && (
-                      <img
-                        src={imageUrl}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
+                      <img src={imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     )}
                     {discount > 0 && (
-                      <div className="absolute top-3 right-3 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-                        -{discount}%
-                      </div>
+                      <div className="absolute top-3 right-3 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">-{discount}%</div>
                     )}
                     {product.is_featured && (
-                      <div className="absolute top-3 left-3 bg-yellow-400 text-gray-900 px-2 py-1 rounded text-xs font-bold">
-                        Featured
-                      </div>
+                      <div className="absolute top-3 left-3 bg-yellow-400 text-gray-900 px-2 py-1 rounded text-xs font-bold">Featured</div>
                     )}
                     {!product.in_stock && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
@@ -566,41 +517,28 @@ export default function ProductsPage() {
                       </div>
                     )}
                   </div>
-
                   <div className="p-4">
                     <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">{product.name}</h3>
                     {product.description && (
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
                     )}
-
                     <div className="flex items-baseline gap-2 mb-4">
-                      <span className="text-lg font-bold text-primary-600">
-                        KES {product.price.toLocaleString()}
-                      </span>
+                      <span className="text-lg font-bold text-primary-600">KES {product.price.toLocaleString()}</span>
                       {product.original_price && (
-                        <span className="text-sm text-gray-500 line-through">
-                          KES {product.original_price.toLocaleString()}
-                        </span>
+                        <span className="text-sm text-gray-500 line-through">KES {product.original_price.toLocaleString()}</span>
                       )}
                     </div>
-
                     <div className="text-xs text-gray-500 mb-4 space-y-1">
                       {product.dimensions && <p>📐 {product.dimensions}</p>}
                       {product.materials && <p>🪵 {product.materials}</p>}
                     </div>
-
                     <div className="mb-4">
                       {product.in_stock === false ? (
-                        <span className="inline-block px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded">
-                          Out of Stock
-                        </span>
+                        <span className="inline-block px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded">Out of Stock</span>
                       ) : (
-                        <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
-                          In Stock
-                        </span>
+                        <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">In Stock</span>
                       )}
                     </div>
-
                     <a
                       href={`https://wa.me/254115990547?text=Hi! I'm interested in the ${encodeURIComponent(product.name)} (KES ${product.price.toLocaleString()}). Can you provide more details?`}
                       target="_blank"
