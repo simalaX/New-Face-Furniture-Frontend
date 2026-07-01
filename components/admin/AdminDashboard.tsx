@@ -30,6 +30,12 @@ interface Category {
 
 const OTHER_CATEGORY_VALUE = '__other__';
 
+// ─── Real Discount Calculator ────────────────────────────────────────────────
+function calculateDiscount(salePrice: number, originalPrice: number): number {
+  if (!originalPrice || originalPrice <= 0) return 0;
+  return Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+}
+
 // ─── Date helpers ──────────────────────────────────────────────────────────────
 function todayISODate(): string {
   return new Date().toISOString().slice(0, 10);
@@ -111,7 +117,7 @@ function CategorySelect({
       <select
         value={isOther ? OTHER_CATEGORY_VALUE : (categoryId ?? '')}
         onChange={handleSelectChange}
-        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
       >
         {categories.map(c => (
           <option key={c.id} value={c.id}>{c.name}</option>
@@ -124,7 +130,7 @@ function CategorySelect({
             value={newCategoryName}
             onChange={e => onNewCategoryNameChange(e.target.value)}
             placeholder="New category name"
-            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 mt-1"
+            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 mt-1"
           />
           <p className="text-xs text-gray-400 mt-1">
             This will create a new category when you save.
@@ -209,19 +215,19 @@ function ChangePasswordModal({ backendUrl, onClose }: { backendUrl: string; onCl
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Current Password</label>
             <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
               placeholder="Enter current password"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">New Password</label>
             <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
               placeholder="At least 8 characters"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Confirm New Password</label>
             <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
               placeholder="Repeat new password"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
           </div>
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2"><p className="text-red-600 text-sm">{error}</p></div>}
           <div className="flex gap-3 pt-1">
@@ -230,7 +236,7 @@ function ChangePasswordModal({ backendUrl, onClose }: { backendUrl: string; onCl
               Cancel
             </button>
             <button type="submit" disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium text-sm disabled:opacity-50">
+              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-yellow-600 text-white rounded-lg hover:from-amber-700 hover:to-yellow-700 transition-colors font-medium text-sm disabled:opacity-50">
               {loading ? 'Saving...' : 'Update Password'}
             </button>
           </div>
@@ -269,6 +275,9 @@ function EditProductModal({
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const discountPercent = price && originalPrice ? calculateDiscount(parseFloat(price), parseFloat(originalPrice)) : 0;
+  const discountAmount = price && originalPrice ? parseFloat(originalPrice) - parseFloat(price) : 0;
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -364,8 +373,8 @@ function EditProductModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="font-serif text-xl font-bold">Edit Product</h3>
+        <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-amber-50 to-yellow-50">
+          <h3 className="font-serif text-xl font-bold bg-gradient-to-r from-amber-700 to-yellow-700 bg-clip-text text-transparent">Edit Product</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -386,11 +395,11 @@ function EditProductModal({
                 </div>
               ))}
               {newImagePreviews.map((url, i) => (
-                <img key={i} src={url} alt="new" className="w-20 h-20 object-cover rounded-xl border border-primary-300" />
+                <img key={i} src={url} alt="new" className="w-20 h-20 object-cover rounded-xl border border-amber-300" />
               ))}
             </div>
             <button type="button" onClick={() => fileRef.current?.click()}
-              className="px-4 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+              className="px-4 py-2 border border-gray-200 rounded-lg text-sm hover:bg-amber-50 transition-colors">
               Add Images
             </button>
             {newImageFiles.length > 0 && <p className="text-xs text-gray-400 mt-1">{newImageFiles.length} new file(s) selected</p>}
@@ -400,7 +409,7 @@ function EditProductModal({
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Title *</label>
               <input value={title} onChange={e => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Category</label>
@@ -413,44 +422,61 @@ function EditProductModal({
               />
             </div>
           </div>
+
+          {/* Luxury Price Section with Live Discount Preview */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Price (KES)</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Sale Price (KES)</label>
               <input type="number" value={price} onChange={e => setPrice(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Original Price (KES)</label>
               <input type="number" value={originalPrice} onChange={e => setOriginalPrice(e.target.value)}
-                placeholder="Optional — shows discount"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                placeholder="Set for discount"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
             </div>
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
-                Date Added <span className="text-red-500">*</span>
-              </label>
-              <input type="date" required value={dateAdded} onChange={e => setDateAdded(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-            </div>
+
+            {/* Live Discount Preview */}
+            {discountPercent > 0 && (
+              <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg p-3 border border-amber-200">
+                <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Discount Preview</p>
+                <p className="text-2xl font-bold bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent">
+                  -{discountPercent}%
+                </p>
+                <p className="text-xs text-green-600 font-medium mt-1">
+                  Save KES {discountAmount.toLocaleString()}
+                </p>
+              </div>
+            )}
           </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+              Date Added <span className="text-red-500">*</span>
+            </label>
+            <input type="date" required value={dateAdded} onChange={e => setDateAdded(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Dimensions</label>
               <input value={dimensions} onChange={e => setDimensions(e.target.value)}
                 placeholder="e.g. 200cm x 90cm x 85cm"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Materials</label>
               <input value={materials} onChange={e => setMaterials(e.target.value)}
                 placeholder="e.g. Solid mahogany, foam"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Description</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none" />
             {description && (
               <p className="text-xs text-gray-500 bg-gray-50 rounded px-2 py-1.5 mt-1 leading-relaxed">
                 {highlightDescription(description)}
@@ -460,12 +486,12 @@ function EditProductModal({
           <div className="flex gap-6">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)}
-                className="w-4 h-4 accent-primary-500" />
-              <span className="text-sm text-gray-600">Featured</span>
+                className="w-4 h-4 accent-amber-500" />
+              <span className="text-sm text-gray-600">⭐ Featured</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={inStock} onChange={e => setInStock(e.target.checked)}
-                className="w-4 h-4 accent-primary-500" />
+                className="w-4 h-4 accent-amber-500" />
               <span className="text-sm text-gray-600">In Stock</span>
             </label>
           </div>
@@ -476,7 +502,7 @@ function EditProductModal({
             Cancel
           </button>
           <button onClick={handleSave} disabled={saving}
-            className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium text-sm disabled:opacity-50">
+            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-yellow-600 text-white rounded-lg hover:from-amber-700 hover:to-yellow-700 transition-colors font-medium text-sm disabled:opacity-50">
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
@@ -485,7 +511,7 @@ function EditProductModal({
   );
 }
 
-// ─── Product Card ─────────────────────────────────────────────────────────────
+// ─── Product Card for Admin ────────────────────────────────────────────────────
 function ProductCard({
   item, categories, backendUrl, cloudName, uploadPreset, onDelete, onUpdated, onCategoryCreated,
 }: {
@@ -501,9 +527,12 @@ function ProductCard({
   const [editing, setEditing] = useState(false);
   const cat = categories.find(c => c.id === item.category_id);
   const imageCount = item.images?.length || (item.secure_url ? 1 : 0);
+  const discount = item.original_price && item.price
+    ? calculateDiscount(item.price, item.original_price)
+    : 0;
 
   return (
-    <div className="bg-white rounded-2xl shadow overflow-hidden">
+    <div className="bg-white rounded-2xl shadow overflow-hidden hover:shadow-lg transition-shadow">
       {editing && (
         <EditProductModal
           item={item} categories={categories} backendUrl={backendUrl}
@@ -515,6 +544,16 @@ function ProductCard({
       )}
       <div className="relative">
         <img src={item.secure_url} alt={item.title || 'product'} className="w-full h-48 object-cover" />
+        {discount > 0 && (
+          <span className="absolute top-2 right-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+            -{discount}%
+          </span>
+        )}
+        {item.is_featured && (
+          <span className="absolute top-2 left-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+            ⭐ Featured
+          </span>
+        )}
         {imageCount > 1 && (
           <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
             {imageCount} photos
@@ -523,7 +562,7 @@ function ProductCard({
       </div>
       <div className="p-4">
         <div className="flex items-center justify-between mb-1">
-          {cat && <p className="text-xs text-primary-500 font-medium uppercase tracking-wide">{cat.name}</p>}
+          {cat && <p className="text-xs text-amber-600 font-medium uppercase tracking-wide">{cat.name}</p>}
           <p className="text-xs text-gray-400">{formatDate(item.created_at)}</p>
         </div>
         <h3 className="font-semibold text-base leading-snug mb-1">{item.title || 'Untitled'}</h3>
@@ -534,21 +573,23 @@ function ProductCard({
         {item.materials && <p className="text-xs text-gray-400 mb-1">🪵 {item.materials}</p>}
         <div className="flex items-center gap-2 mb-3">
           {item.price !== undefined && (
-            <p className="text-base font-bold text-primary-600">KES {item.price.toLocaleString()}</p>
+            <p className="text-base font-bold bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent">
+              KES {item.price.toLocaleString()}
+            </p>
           )}
           {item.original_price && (
             <p className="text-sm text-gray-400 line-through">KES {item.original_price.toLocaleString()}</p>
           )}
         </div>
         <div className="flex gap-1 mb-3">
-          {item.is_featured && <span className="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">Featured</span>}
+          {item.is_featured && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Featured</span>}
           {item.in_stock === false
             ? <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Out of Stock</span>
             : <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">In Stock</span>}
         </div>
         <div className="flex gap-2">
           <button onClick={() => setEditing(true)}
-            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+            className="flex-1 px-3 py-2 border border-amber-200 rounded-lg hover:bg-amber-50 transition-colors text-sm font-medium text-amber-700">
             Edit
           </button>
           <button onClick={onDelete}
@@ -574,7 +615,6 @@ export default function AdminDashboard({ admin }: { admin: string }) {
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
 
-  // ── FIX: store actual File objects, not just names ─────────────────────────
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedPreviews, setSelectedPreviews] = useState<string[]>([]);
 
@@ -652,13 +692,11 @@ export default function AdminDashboard({ admin }: { admin: string }) {
     setCategories(prev => (prev.some(c => c.id === category.id) ? prev : [...prev, category]));
   }
 
-  // ── FIX: append newly chosen files instead of replacing the selection ──────
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     setSelectedFiles(prev => [...prev, ...files]);
     setSelectedPreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))]);
-    // reset the input value so selecting the same file again still fires onChange
     if (fileRef.current) fileRef.current.value = '';
   }
 
@@ -694,7 +732,6 @@ export default function AdminDashboard({ admin }: { admin: string }) {
       const uploadedUrls: string[] = [];
       let firstPublicId = '';
 
-      // ── Upload every selected file to Cloudinary ───────────────────────────
       for (const file of selectedFiles) {
         const fd = new FormData();
         fd.append('file', file);
@@ -792,13 +829,13 @@ export default function AdminDashboard({ admin }: { admin: string }) {
       )}
 
       <div className="mb-8 flex items-center justify-between flex-wrap gap-3">
-        <h2 className="font-serif text-2xl font-bold">Admin Dashboard</h2>
+        <h2 className="font-serif text-3xl font-bold bg-gradient-to-r from-amber-700 to-yellow-700 bg-clip-text text-transparent">Admin Dashboard</h2>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-500">
             Signed in as <strong>{admin}</strong> &bull; {images.length} item{images.length !== 1 ? 's' : ''}
           </span>
           <button onClick={() => setShowPasswordModal(true)}
-            className="flex items-center gap-2 text-sm border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors">
+            className="flex items-center gap-2 text-sm border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-amber-50 transition-colors">
             <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
@@ -809,22 +846,20 @@ export default function AdminDashboard({ admin }: { admin: string }) {
       </div>
 
       <form onSubmit={handleUpload} className="bg-white p-6 rounded-2xl shadow mb-8 space-y-6">
-        <h3 className="font-serif text-lg font-bold border-b pb-3">Upload New Product</h3>
+        <h3 className="font-serif text-lg font-bold border-b-2 border-amber-200 pb-3 bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent">Upload New Product</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
 
-          {/* ── Image picker with previews ─────────────────────────────────── */}
           <div className="flex flex-col gap-1">
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
               Product Images <span className="text-red-500">*</span>
               <span className="ml-1 font-normal normal-case text-gray-400">(select multiple)</span>
             </label>
 
-            {/* Previews grid */}
             {selectedPreviews.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
                 {selectedPreviews.map((url, i) => (
                   <div key={i} className="relative">
-                    <img src={url} alt="" className="w-16 h-16 object-cover rounded-lg border border-gray-200" />
+                    <img src={url} alt="" className="w-16 h-16 object-cover rounded-lg border border-amber-200" />
                     <button
                       type="button"
                       onClick={() => removeSelectedFile(i)}
@@ -839,9 +874,9 @@ export default function AdminDashboard({ admin }: { admin: string }) {
 
             <div className="relative">
               <div
-                className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary-400 transition-colors min-h-[80px]"
+                className="border-2 border-dashed border-amber-200 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-amber-400 transition-colors min-h-[80px]"
               >
-                <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                     d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
@@ -856,12 +891,11 @@ export default function AdminDashboard({ admin }: { admin: string }) {
                 type="file"
                 accept="image/*"
                 multiple
-                // visible to the browser as the click target (opacity 0 overlay)
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 onChange={handleFileChange}
               />
               {selectedFiles.length > 0 && (
-                <p className="text-xs text-primary-500 font-medium">{selectedFiles.length} image{selectedFiles.length > 1 ? 's' : ''} ready to upload</p>
+                <p className="text-xs text-amber-600 font-medium">{selectedFiles.length} image{selectedFiles.length > 1 ? 's' : ''} ready to upload</p>
               )}
             </div>
           </div>
@@ -872,7 +906,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
             </label>
             <input value={title} onChange={e => setTitle(e.target.value)}
               placeholder="e.g. 6-Seater Dining Set" required
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
           </div>
           <div className="flex flex-col gap-1">
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Category</label>
@@ -889,14 +923,14 @@ export default function AdminDashboard({ admin }: { admin: string }) {
             <div className="flex flex-col gap-1">
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Price (KES)</label>
               <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g. 15000"
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
             </div>
             <div className="flex flex-col gap-1">
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Date Added <span className="text-red-500">*</span>
               </label>
               <input type="date" required value={dateAdded} onChange={e => setDateAdded(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
             </div>
             <div className="sm:col-span-2 flex flex-col gap-1">
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -904,7 +938,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
               </label>
               <input value={description} onChange={e => setDescription(e.target.value)}
                 placeholder="e.g. Premium solid mahogany 6-seater dining set with glossy finish"
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
               {description && (
                 <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100 leading-relaxed">
                   {highlightDescription(description)}
@@ -916,7 +950,7 @@ export default function AdminDashboard({ admin }: { admin: string }) {
 
         <div className="flex justify-end pt-1">
           <button type="submit" disabled={uploading}
-            className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-50">
+            className="px-8 py-3 bg-gradient-to-r from-amber-600 to-yellow-600 text-white rounded-lg hover:from-amber-700 hover:to-yellow-700 transition-colors font-medium disabled:opacity-50">
             {uploading ? (
               <span className="flex items-center gap-2">
                 <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -931,8 +965,8 @@ export default function AdminDashboard({ admin }: { admin: string }) {
       </form>
 
       <div>
-        <h3 className="font-serif text-lg font-bold mb-4">
-          Uploaded Items <span className="text-gray-400 font-sans font-normal text-base">({images.length})</span>
+        <h3 className="font-serif text-lg font-bold mb-4 bg-gradient-to-r from-amber-700 to-yellow-700 bg-clip-text text-transparent">
+          Uploaded Items <span className="text-gray-400 font-sans font-normal text-base">{images.length > 0 && `(${images.length})`}</span>
         </h3>
         {images.length === 0 ? (
           <div className="bg-gray-50 rounded-2xl p-12 text-center">

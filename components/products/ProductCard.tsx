@@ -54,6 +54,12 @@ function RatingStars({ rating }: { rating: number }) {
   );
 }
 
+// ─── Real Discount Calculator ────────────────────────────────────────────────
+function calculateDiscount(salePrice: number, originalPrice: number): number {
+  if (!originalPrice || originalPrice <= 0) return 0;
+  return Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+}
+
 export default function ProductCard({ product }: Props) {
   const addItem = useCartStore(s => s.addItem);
   const router = useRouter();
@@ -65,9 +71,12 @@ export default function ProductCard({ product }: Props) {
   };
 
   const img = product.images?.[0] || '/placeholder-furniture.jpg';
-  const discount = product.original_price
-    ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
+  const discount = product.original_price && product.price
+    ? calculateDiscount(product.price, product.original_price)
     : null;
+  const savingsAmount = product.original_price && product.price
+    ? product.original_price - product.price
+    : 0;
   const uploadedDate = formatDate((product as any).created_at);
 
   const ratingSeed = String((product as any).id ?? product.slug ?? product.name);
@@ -84,13 +93,23 @@ export default function ProductCard({ product }: Props) {
             src={img}
             alt={product.name}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            className="object-cover group-hover:scale-110 transition-transform duration-500"
           />
-          {discount && (
-            <span className="absolute top-1.5 right-1.5 sm:top-2 sm:left-2 sm:right-auto bg-orange-100 text-terracotta sm:bg-terracotta sm:text-white text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded-md">
+
+          {/* Discount Badge - Luxury Red Gradient */}
+          {discount && discount > 0 && (
+            <span className="absolute top-1.5 right-1.5 sm:top-2 sm:left-2 sm:right-auto bg-gradient-to-r from-red-500 to-red-600 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md shadow-lg">
               -{discount}%
             </span>
           )}
+
+          {/* Featured Star Badge */}
+          {product.is_featured && (
+            <span className="absolute top-1.5 left-1.5 sm:top-2 sm:right-2 sm:left-auto bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg flex items-center gap-1">
+              <Star size={11} className="fill-current" /> Featured
+            </span>
+          )}
+
           {!product.in_stock && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
               <span className="bg-white text-dark text-xs font-semibold px-3 py-1.5 rounded-lg">Out of Stock</span>
@@ -136,9 +155,10 @@ export default function ProductCard({ product }: Props) {
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-primary-600 font-bold text-sm sm:text-base">
+          {/* Luxury Price Section with Gradient */}
+          <div className="mb-2">
+            <div className="flex items-center gap-2">
+              <p className="text-base sm:text-lg font-bold bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent">
                 KES {product.price.toLocaleString()}
               </p>
               {product.original_price && (
@@ -147,11 +167,29 @@ export default function ProductCard({ product }: Props) {
                 </p>
               )}
             </div>
+
+            {/* Savings Callout */}
+            {savingsAmount > 0 && (
+              <p className="text-[10px] sm:text-xs text-green-600 font-semibold mt-0.5">
+                💰 Save KES {savingsAmount.toLocaleString()}
+              </p>
+            )}
+          </div>
+
+          {/* Stock Status Badge */}
+          <div className="flex gap-1 mb-2">
+            {product.in_stock === false
+              ? <span className="text-[10px] sm:text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">Out of Stock</span>
+              : <span className="text-[10px] sm:text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-medium">In Stock</span>}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div />
             {product.in_stock && (
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={handleAddToCart}
-                className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 bg-primary-500 hover:bg-primary-600 text-white rounded-xl items-center justify-center transition-colors shadow-sm">
+                className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white rounded-xl items-center justify-center transition-all shadow-md">
                 <ShoppingCart size={14} />
               </motion.button>
             )}
