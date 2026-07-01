@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -363,7 +363,7 @@ function RoomPlanner({
 // PRODUCTS PAGE
 // ────────────────────────────────────────────────────────────────────────────
 
-export default function ProductsPage() {
+function ProductsPageInner() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -560,5 +560,18 @@ export default function ProductsPage() {
 
       <Footer />
     </div>
+  );
+}
+
+// Suspense wrapper required by Next.js 15 for useSearchParams during prerender
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+      </div>
+    }>
+      <ProductsPageInner />
+    </Suspense>
   );
 }
