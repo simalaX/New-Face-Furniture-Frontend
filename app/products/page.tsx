@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Navbar from '@/components/home/Navbar';
-import Footer from '@/components/home/Footer';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 import RoomPlanner from '@/components/home/RoomPlanner';
 import toast from 'react-hot-toast';
 
