@@ -1,234 +1,301 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
-import { motion } from 'framer-motion';
+
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { SlidersHorizontal, X } from 'lucide-react';
-import ProductCard from '@/components/products/ProductCard';
-import { productsApi, categoriesApi } from '@/lib/api';
-import { Product, Category } from '@/types';
+import Navbar from '@/components/home/Navbar';
+import Footer from '@/components/home/Footer';
+import RoomPlanner from '@/components/home/RoomPlanner';
+import toast from 'react-hot-toast';
 
-const sortOptions = [
-  { value: 'default', label: 'Default' },
-  { value: 'price-asc', label: 'Price: Low to High' },
-  { value: 'price-desc', label: 'Price: High to Low' },
-  { value: 'name-asc', label: 'Name A-Z' },
-];
+interface Product {
+  id: number;
+  name: string;
+  slug: string;
+  images?: string[];
+  price: number;
+  original_price?: number;
+  description?: string;
+  category_id?: number;
+  is_featured?: boolean;
+  in_stock?: boolean;
+  secure_url?: string;
+  dimensions?: string;
+  materials?: string;
+}
 
-const PRICE_RANGES = [
-  { label: 'Any Price', value: '' },
-  { label: 'Under KES 20K', value: '0-20000' },
-  { label: 'KES 20K - 50K', value: '20000-50000' },
-  { label: 'KES 50K - 100K', value: '50000-100000' },
-  { label: 'KES 100K - 200K', value: '100000-200000' },
-  { label: 'Above KES 200K', value: '200000-999999999' },
-];
-
-const DEFAULT_CATEGORIES = [
-  { id: 1, name: 'Sofas & Seating', slug: 'sofas-seating' },
-  { id: 2, name: 'Beds & Bedroom', slug: 'beds-bedroom' },
-  { id: 3, name: 'Dining Sets', slug: 'dining-sets' },
-  { id: 4, name: 'Coffee Tables', slug: 'coffee-tables' },
-  { id: 5, name: 'TV Stands', slug: 'tv-stands' },
-  { id: 6, name: 'Wardrobes', slug: 'wardrobes' },
-  { id: 7, name: 'Office Furniture', slug: 'office-furniture' },
-  { id: 8, name: 'Accent Chairs', slug: 'accent-chairs' },
-  { id: 9, name: 'Outdoor Furniture', slug: 'outdoor-furniture' },
-  { id: 10, name: 'Storage Solutions', slug: 'storage-solutions' },
-  { id: 11, name: 'Hotel & Restaurant', slug: 'hotel-restaurant' },
-  { id: 12, name: 'Airbnb Furnishing', slug: 'airbnb-furnishing' },
-  { id: 13, name: 'Lounges', slug: 'lounges' },
-  { id: 14, name: 'Bar Stools', slug: 'bar-stools' },
-  { id: 15, name: 'Custom', slug: 'custom' },
-];
-
-function ProductsContent() {
-  const searchParams = useSearchParams();
-
-  const categoryParam = searchParams.get('category') || 'all';
-  const searchParam = searchParams.get('search') || '';
-  const priceParam = searchParams.get('price') || '';
-  const sortParam = searchParams.get('sort') || 'default';
-
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-  const [search] = useState(searchParam);
-  const [selectedCat, setSelectedCat] = useState(categoryParam);
-  const [sort, setSort] = useState(sortParam);
-  const [priceRange, setPriceRange] = useState(priceParam);
-  const [showFilters, setShowFilters] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => { setSelectedCat(categoryParam); }, [categoryParam]);
-  useEffect(() => { setPriceRange(priceParam); }, [priceParam]);
-  useEffect(() => { setSort(sortParam); }, [sortParam]);
-
-  useEffect(() => {
-    setLoading(true);
-    productsApi.getAll({ limit: 50 })
-      .then(d => { if (d?.length) setProducts(d); })
-      .catch(() => { })
-      .finally(() => setLoading(false));
-
-    categoriesApi.getAll()
-      .then(d => { if (d?.length) setCategories(d); })
-      .catch(() => { });
-  }, []);
-
-  const allCats = [{ id: 0, name: 'All Products', slug: 'all' }, ...categories];
-
-  const [priceMin, priceMax] = priceRange
-    ? priceRange.split('-').map(Number)
-    : [0, Infinity];
-
-  const filtered = products
-    .filter(p => selectedCat === 'all' || p.category?.slug === selectedCat)
-    .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
-    .filter(p => {
-      if (!priceRange) return true;
-      return p.price >= priceMin && p.price <= priceMax;
-    })
-    .sort((a, b) => {
-      if (sort === 'price-asc') return a.price - b.price;
-      if (sort === 'price-desc') return b.price - a.price;
-      if (sort === 'name-asc') return a.name.localeCompare(b.name);
-      return 0;
-    });
-
-  const currentCatName = allCats.find(c => c.slug === selectedCat)?.name || 'All Products';
-  const hasActiveFilters = selectedCat !== 'all' || priceRange || sort !== 'default';
-
-  function clearAll() {
-    setSelectedCat('all');
-    setPriceRange('');
-    setSort('default');
-  }
-
-  return (
-    <div className="min-h-screen bg-cream">
-      <div className="bg-dark text-white py-14">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-secondary-400 text-sm uppercase tracking-widest mb-2">Our Collection</p>
-          <h1 className="font-serif text-4xl md:text-5xl font-bold">{currentCatName}</h1>
-          <p className="text-gray-400 mt-3">Premium furniture crafted for every space in Kenya</p>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <button onClick={() => setShowFilters(!showFilters)} className="sm:hidden flex items-center gap-2 border border-gray-200 bg-white rounded-lg px-4 py-2.5 text-sm font-medium">
-            <SlidersHorizontal size={16} /> Filters
-          </button>
-          <div className="flex items-center gap-3 ml-auto">
-            {hasActiveFilters && (
-              <button onClick={clearAll} className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors">Clear filters</button>
-            )}
-            <select value={sort} onChange={e => setSort(e.target.value)} className="input bg-white w-52">
-              {sortOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-        </div>
-
-        {hasActiveFilters && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            {selectedCat !== 'all' && (
-              <span className="inline-flex items-center gap-1.5 bg-primary-50 text-primary-700 text-xs font-medium px-3 py-1.5 rounded-full border border-primary-100">
-                {allCats.find(c => c.slug === selectedCat)?.name}
-                <button onClick={() => setSelectedCat('all')}><X size={11} /></button>
-              </span>
-            )}
-            {priceRange && (
-              <span className="inline-flex items-center gap-1.5 bg-primary-50 text-primary-700 text-xs font-medium px-3 py-1.5 rounded-full border border-primary-100">
-                {PRICE_RANGES.find(r => r.value === priceRange)?.label}
-                <button onClick={() => setPriceRange('')}><X size={11} /></button>
-              </span>
-            )}
-          </div>
-        )}
-
-        <div className="flex gap-8">
-          <aside className={`${showFilters ? 'block' : 'hidden'} sm:block w-full sm:w-56 flex-shrink-0`}>
-            <div className="bg-white rounded-2xl p-5 shadow-sm sticky top-24 space-y-6">
-              <div>
-                <h3 className="font-serif font-semibold text-dark mb-3">Categories</h3>
-                <div className="space-y-1">
-                  {allCats.map(cat => (
-                    <button key={cat.slug} onClick={() => setSelectedCat(cat.slug)}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${selectedCat === cat.slug
-                        ? 'bg-primary-50 text-primary-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-50'
-                        }`}>
-                      {cat.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="font-serif font-semibold text-dark mb-3">Price Range</h3>
-                <div className="space-y-1">
-                  {PRICE_RANGES.map(r => (
-                    <button key={r.value} onClick={() => setPriceRange(r.value)}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${priceRange === r.value
-                        ? 'bg-primary-50 text-primary-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-50'
-                        }`}>
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-5">
-              <p className="text-gray-500 text-sm">{filtered.length} product{filtered.length !== 1 ? 's' : ''} found</p>
-            </div>
-            {loading ? (
-              <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6">
-                {[...Array(6)].map((_, i) => <div key={i} className="bg-white rounded-2xl h-72 animate-pulse" />)}
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-2xl">
-                {products.length === 0 ? (
-                  <>
-                    <h3 className="font-serif text-xl font-bold text-dark mb-2">Products Coming Soon</h3>
-                    <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">We're adding our collection. Chat with us on WhatsApp to see what's available now.</p>
-                    <a href="https://wa.me/254115990547?text=Hi, I'd like to see your furniture collection" target="_blank" rel="noreferrer" className="btn-primary inline-flex">Chat on WhatsApp</a>
-                  </>
-                ) : selectedCat !== 'all' ? (
-                  <>
-                    <h3 className="font-serif text-xl font-bold text-dark mb-2">{currentCatName} is being handcrafted</h3>
-                    <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">New pieces are on the way — let us know you're interested.</p>
-                    <a href={`https://wa.me/254115990547?text=${encodeURIComponent(`Hi, I'd like to know when ${currentCatName} pieces will be available`)}`} target="_blank" rel="noreferrer" className="btn-primary inline-flex">Notify Me on WhatsApp</a>
-                  </>
-                ) : (
-                  <>
-                    <h3 className="font-serif text-xl font-bold text-dark mb-2">No products match these filters</h3>
-                    <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">Try a different price range or sort option.</p>
-                    <button onClick={clearAll} className="btn-outline">Clear filters</button>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6">
-                {filtered.map((p, i) => (
-                  <motion.div key={p.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                    <ProductCard product={p} />
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
 }
 
 export default function ProductsPage() {
+  const searchParams = useSearchParams();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showRoomPlanner, setShowRoomPlanner] = useState(false);
+
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://new-face-backend-ba3q.onrender.com';
+
+  // ── Load categories ────────────────────────────────────────────────────────
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await fetch(`${backendUrl}/api/v1/categories/`);
+        const cats: Category[] = await res.json();
+        setCategories(cats);
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // ── Load products ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const loadProducts = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${backendUrl}/api/v1/products/?limit=100`);
+        if (!res.ok) throw new Error('Failed to fetch products');
+        const data: Product[] = await res.json();
+        setProducts(data);
+      } catch (err) {
+        console.error('Failed to load products:', err);
+        toast.error('Could not load products');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProducts();
+  }, []);
+
+  // ── Handle category filter from URL ────────────────────────────────────────
+  useEffect(() => {
+    const categorySlug = searchParams.get('category');
+    if (categorySlug) {
+      const cat = categories.find(c => c.slug === categorySlug);
+      setSelectedCategory(cat ? String(cat.id) : null);
+    }
+  }, [searchParams, categories]);
+
+  // ── Filter products ────────────────────────────────────────────────────────
+  useEffect(() => {
+    let filtered = products;
+
+    if (selectedCategory) {
+      filtered = filtered.filter(p => String(p.category_id) === selectedCategory);
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(query) ||
+        p.description?.toLowerCase().includes(query)
+      );
+    }
+
+    setFilteredProducts(filtered);
+  }, [selectedCategory, searchQuery, products]);
+
   return (
-    <Suspense fallback={<div className="min-h-screen bg-cream flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div></div>}>
-      <ProductsContent />
-    </Suspense>
+    <div className="min-h-screen bg-white flex flex-col">
+      <Navbar />
+
+      {/* Room Planner Modal */}
+      <RoomPlanner
+        products={products.map(p => ({
+          id: p.id,
+          name: p.name,
+          images: p.images || (p.secure_url ? [p.secure_url] : []),
+          price: p.price,
+        }))}
+        isOpen={showRoomPlanner}
+        onClose={() => setShowRoomPlanner(false)}
+      />
+
+      <div className="flex-1 px-4 sm:px-6 lg:px-8 py-12 max-w-7xl mx-auto w-full">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="font-serif text-4xl font-bold mb-3">Our Collection</h1>
+          <p className="text-gray-600">Discover our curated selection of luxury furniture for your home, office, or business.</p>
+        </div>
+
+        {/* Virtual Room Planner Button */}
+        <div className="mb-8 flex justify-center">
+          <button
+            onClick={() => setShowRoomPlanner(true)}
+            className="px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Virtual Room Planner
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="mb-8 space-y-4">
+          {/* Search */}
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+
+          {/* Category Filter */}
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedCategory === null
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+            >
+              All Categories
+            </button>
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(String(cat.id))}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedCategory === String(cat.id)
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Results Count */}
+        {!loading && (
+          <p className="text-sm text-gray-500 mb-6">
+            Showing {filteredProducts.length} of {products.length} products
+          </p>
+        )}
+
+        {/* Products Grid */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+              <p className="mt-4 text-gray-500">Loading products...</p>
+            </div>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-12">
+            <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m0 0l8 4m-8-4v10l8 4m0-10l8 4m-8-4v10" />
+            </svg>
+            <h3 className="text-lg font-semibold text-gray-700 mb-1">No products found</h3>
+            <p className="text-gray-500">Try adjusting your filters or search query.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredProducts.map(product => {
+              const imageUrl = product.images?.[0] || product.secure_url || '';
+              const discount = product.original_price
+                ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
+                : 0;
+
+              return (
+                <div
+                  key={product.id}
+                  className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group cursor-pointer"
+                >
+                  {/* Image */}
+                  <div className="relative w-full h-64 bg-gray-200 overflow-hidden">
+                    {imageUrl && (
+                      <img
+                        src={imageUrl}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    )}
+                    {discount > 0 && (
+                      <div className="absolute top-3 right-3 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                        -{discount}%
+                      </div>
+                    )}
+                    {product.is_featured && (
+                      <div className="absolute top-3 left-3 bg-yellow-400 text-gray-900 px-2 py-1 rounded text-xs font-bold">
+                        Featured
+                      </div>
+                    )}
+                    {!product.in_stock && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">Out of Stock</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-4">
+                    <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">{product.name}</h3>
+                    {product.description && (
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
+                    )}
+
+                    {/* Pricing */}
+                    <div className="flex items-baseline gap-2 mb-4">
+                      <span className="text-lg font-bold text-primary-600">
+                        KES {product.price.toLocaleString()}
+                      </span>
+                      {product.original_price && (
+                        <span className="text-sm text-gray-500 line-through">
+                          KES {product.original_price.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Meta */}
+                    <div className="text-xs text-gray-500 mb-4 space-y-1">
+                      {product.dimensions && <p>📐 {product.dimensions}</p>}
+                      {product.materials && <p>🪵 {product.materials}</p>}
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="mb-4">
+                      {product.in_stock === false ? (
+                        <span className="inline-block px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded">
+                          Out of Stock
+                        </span>
+                      ) : (
+                        <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                          In Stock
+                        </span>
+                      )}
+                    </div>
+
+                    {/* CTA */}
+                    <a
+                      href={`https://wa.me/254115990547?text=Hi! I'm interested in the ${encodeURIComponent(product.name)} (KES ${product.price.toLocaleString()}). Can you provide more details?`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.272-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-4.969 1.523A9.865 9.865 0 005.064 9.51a9.87 9.87 0 001.523 4.969 9.865 9.865 0 004.969 1.524h.004c2.648 0 5.195-1.035 7.081-2.92a10.01 10.01 0 002.919-7.081 9.87 9.87 0 00-1.523-4.969A9.865 9.865 0 0012 2.05A9.87 9.87 0 007.05 3.574 9.865 9.865 0 005.13 8.544m11.313-5.867A11.9 11.9 0 0012 1c6.627 0 12 5.373 12 12s-5.373 12-12 12S0 19.627 0 12 5.373 0 12 0z" />
+                      </svg>
+                      Inquire
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <Footer />
+    </div>
   );
 }
