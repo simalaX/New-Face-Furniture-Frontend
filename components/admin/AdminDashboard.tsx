@@ -15,8 +15,6 @@ interface ImageItem {
   original_price?: number;
   dimensions?: string;
   materials?: string;
-  is_featured?: boolean;
-  in_stock?: boolean;
   category_id?: number;
   slug?: string;
   created_at?: string;
@@ -330,8 +328,6 @@ function EditProductModal({
           images: finalImages,
           dimensions: dimensions.trim() || null,
           materials: materials.trim() || null,
-          is_featured: item.is_featured ?? false,
-          in_stock: item.in_stock !== false,
           category_id: resolvedCategoryId,
           created_at: new Date(dateAdded).toISOString(),
         }),
@@ -353,8 +349,6 @@ function EditProductModal({
         original_price: saved.original_price,
         dimensions: saved.dimensions,
         materials: saved.materials,
-        is_featured: saved.is_featured,
-        in_stock: saved.in_stock,
         category_id: saved.category_id,
         slug: saved.slug,
         created_at: saved.created_at || item.created_at,
@@ -651,8 +645,6 @@ export default function AdminDashboard({ admin }: { admin: string }) {
             original_price: p.original_price,
             dimensions: p.dimensions,
             materials: p.materials,
-            is_featured: p.is_featured,
-            in_stock: p.in_stock,
             category_id: p.category_id,
             slug: p.slug,
             created_at: p.created_at,
@@ -737,7 +729,6 @@ export default function AdminDashboard({ admin }: { admin: string }) {
           original_price: null,
           images: uploadedUrls,
           dimensions: null, materials: null,
-          is_featured: false, in_stock: true,
           category_id: resolvedCategoryId,
           created_at: new Date(dateAdded).toISOString(),
         }),
@@ -760,8 +751,6 @@ export default function AdminDashboard({ admin }: { admin: string }) {
         original_price: saved.original_price,
         dimensions: saved.dimensions,
         materials: saved.materials,
-        is_featured: saved.is_featured,
-        in_stock: saved.in_stock,
         category_id: saved.category_id,
         slug: saved.slug,
         created_at: saved.created_at || new Date(dateAdded).toISOString(),
