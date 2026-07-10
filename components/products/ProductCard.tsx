@@ -98,23 +98,11 @@ export default function ProductCard({ product }: Props) {
 
           {/* Discount Badge - Luxury Red Gradient */}
           {discount && discount > 0 && (
-            <span className="absolute top-1.5 right-1.5 sm:top-2 sm:left-2 sm:right-auto bg-gradient-to-r from-red-500 to-red-600 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md shadow-lg">
+            <span className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md shadow-lg">
               -{discount}%
             </span>
           )}
 
-          {/* Featured Star Badge */}
-          {product.is_featured && (
-            <span className="absolute top-1.5 left-1.5 sm:top-2 sm:right-2 sm:left-auto bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg flex items-center gap-1">
-              <Star size={11} className="fill-current" /> Featured
-            </span>
-          )}
-
-          {!product.in_stock && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <span className="bg-white text-dark text-xs font-semibold px-3 py-1.5 rounded-lg">Out of Stock</span>
-            </div>
-          )}
           {/* Hover icons: desktop only, hidden on touch/mobile */}
           <div className="hidden sm:flex absolute top-2 right-2 flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <button className="w-7 h-7 bg-white rounded-lg flex items-center justify-center shadow-sm hover:bg-primary-50 transition-colors">
@@ -176,23 +164,14 @@ export default function ProductCard({ product }: Props) {
             )}
           </div>
 
-          {/* Stock Status Badge */}
-          <div className="flex gap-1 mb-2">
-            {product.in_stock === false
-              ? <span className="text-[10px] sm:text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">Out of Stock</span>
-              : <span className="text-[10px] sm:text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-medium">In Stock</span>}
-          </div>
-
           <div className="flex items-center justify-between">
             <div />
-            {product.in_stock && (
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleAddToCart}
-                className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white rounded-xl items-center justify-center transition-all shadow-md">
-                <ShoppingCart size={14} />
-              </motion.button>
-            )}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleAddToCart}
+              className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white rounded-xl items-center justify-center transition-all shadow-md">
+              <ShoppingCart size={14} />
+            </motion.button>
           </div>
         </div>
 

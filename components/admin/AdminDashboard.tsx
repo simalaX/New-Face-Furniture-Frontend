@@ -265,8 +265,6 @@ function EditProductModal({
   const [originalPrice, setOriginalPrice] = useState(String(item.original_price || ''));
   const [dimensions, setDimensions] = useState(item.dimensions || '');
   const [materials, setMaterials] = useState(item.materials || '');
-  const [isFeatured, setIsFeatured] = useState(item.is_featured || false);
-  const [inStock, setInStock] = useState(item.in_stock !== false);
   const [categoryId, setCategoryId] = useState<number | null>(item.category_id ?? categories[0]?.id ?? null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [dateAdded, setDateAdded] = useState(item.created_at ? item.created_at.slice(0, 10) : todayISODate());
@@ -332,8 +330,8 @@ function EditProductModal({
           images: finalImages,
           dimensions: dimensions.trim() || null,
           materials: materials.trim() || null,
-          is_featured: isFeatured,
-          in_stock: inStock,
+          is_featured: item.is_featured ?? false,
+          in_stock: item.in_stock !== false,
           category_id: resolvedCategoryId,
           created_at: new Date(dateAdded).toISOString(),
         }),
@@ -483,18 +481,6 @@ function EditProductModal({
               </p>
             )}
           </div>
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)}
-                className="w-4 h-4 accent-amber-500" />
-              <span className="text-sm text-gray-600">⭐ Featured</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={inStock} onChange={e => setInStock(e.target.checked)}
-                className="w-4 h-4 accent-amber-500" />
-              <span className="text-sm text-gray-600">In Stock</span>
-            </label>
-          </div>
         </div>
         <div className="flex gap-3 p-6 border-t">
           <button onClick={onClose}
@@ -549,11 +535,6 @@ function ProductCard({
             -{discount}%
           </span>
         )}
-        {item.is_featured && (
-          <span className="absolute top-2 left-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-            ⭐ Featured
-          </span>
-        )}
         {imageCount > 1 && (
           <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
             {imageCount} photos
@@ -580,12 +561,6 @@ function ProductCard({
           {item.original_price && (
             <p className="text-sm text-gray-400 line-through">KES {item.original_price.toLocaleString()}</p>
           )}
-        </div>
-        <div className="flex gap-1 mb-3">
-          {item.is_featured && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Featured</span>}
-          {item.in_stock === false
-            ? <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Out of Stock</span>
-            : <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">In Stock</span>}
         </div>
         <div className="flex gap-2">
           <button onClick={() => setEditing(true)}
