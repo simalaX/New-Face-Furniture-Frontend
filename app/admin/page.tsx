@@ -42,8 +42,6 @@ function AddProductForm() {
   const [originalPrice, setOriginalPrice] = useState('');
   const [dimensions, setDimensions] = useState('');
   const [materials, setMaterials] = useState('');
-  const [featured, setFeatured] = useState(false);
-  const [inStock, setInStock] = useState(true);
   const [files, setFiles] = useState<FileList | null>(null);
   const [saving, setSaving] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -81,7 +79,7 @@ function AddProductForm() {
   function resetForm() {
     setTitle(''); setDescription(''); setPrice(''); setOriginalPrice('');
     setDimensions(''); setMaterials('');
-    setFeatured(false); setInStock(true); setFiles(null); setPreviews([]);
+    setFiles(null); setPreviews([]);
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -112,7 +110,8 @@ function AddProductForm() {
       // 2. Derive slug from title
       const slug = title.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
-      // 3. Save to backend
+      // 3. Save to backend — is_featured and in_stock are now fixed constants,
+      //    never left unset by a forgotten checkbox.
       const res = await fetch(`${BACKEND_URL}/api/v1/products/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -126,8 +125,8 @@ function AddProductForm() {
           images,
           dimensions: dimensions.trim() || null,
           materials: materials.trim() || null,
-          is_featured: featured,
-          in_stock: inStock,
+          is_featured: false,
+          in_stock: true,
           category_id: categoryId,
         }),
       });
@@ -319,28 +318,6 @@ function AddProductForm() {
             className="hidden"
             onChange={e => setFiles(e.target.files)}
           />
-        </div>
-
-        {/* Featured + In Stock */}
-        <div className="flex items-center gap-6">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={featured}
-              onChange={e => setFeatured(e.target.checked)}
-              className="w-4 h-4 accent-primary-500"
-            />
-            <span className="text-sm text-gray-600">Featured</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={inStock}
-              onChange={e => setInStock(e.target.checked)}
-              className="w-4 h-4 accent-primary-500"
-            />
-            <span className="text-sm text-gray-600">In Stock</span>
-          </label>
         </div>
 
         {/* Actions */}
