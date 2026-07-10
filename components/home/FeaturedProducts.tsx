@@ -11,7 +11,8 @@ export default function FeaturedProducts() {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    productsApi.getAll({ featured: true, limit: 8 })
+    // Shows every admin-uploaded product, not just ones flagged is_featured.
+    productsApi.getForHomepage(8)
       .then(data => { if (data?.length) setProducts(data); })
       .catch(() => { });
   }, []);

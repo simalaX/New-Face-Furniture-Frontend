@@ -29,6 +29,11 @@ api.interceptors.response.use(
 export const productsApi = {
   getAll: (params?: { category_id?: number; featured?: boolean; search?: string; skip?: number; limit?: number }) =>
     api.get('/products/', { params }).then(r => r.data),
+  // Homepage "Featured Products" section — returns every admin-uploaded product,
+  // NOT filtered by the is_featured flag. Use this instead of getAll({ featured: true })
+  // wherever the homepage should show all products, featured or not.
+  getForHomepage: (limit: number = 8) =>
+    api.get('/products/', { params: { limit } }).then(r => r.data),
   getBySlug: (slug: string) => api.get(`/products/slug/${slug}`).then(r => r.data),
   getById: (id: number) => api.get(`/products/${id}`).then(r => r.data),
 };
