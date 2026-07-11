@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ShoppingCart, ArrowLeft, Ruler, Package, CheckCircle, MessageCircle, Minus, Plus, Star } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Ruler, Package, MessageCircle, Minus, Plus, Star } from 'lucide-react';
 import { productsApi } from '@/lib/api';
 import { Product } from '@/types';
 import { useCartStore } from '@/lib/store';
@@ -178,14 +178,6 @@ export default function ProductDetailPage() {
                 <span className="bg-terracotta/10 text-terracotta text-sm font-semibold px-2 py-0.5 rounded-lg">
                   Save KES {(product.original_price - product.price).toLocaleString()}
                 </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 mb-6">
-              {product.in_stock ? (
-                <><CheckCircle size={18} className="text-green-500" /><span className="text-green-600 text-sm font-medium">In Stock — Ready to Order</span></>
-              ) : (
-                <span className="text-red-500 text-sm font-medium">Out of Stock</span>
               )}
             </div>
 
